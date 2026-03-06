@@ -1,0 +1,328 @@
+{
+  "analysis_metadata": {
+    "experiment": "ATLAS",
+    "paper_title": "Cross-section measurements for the production of a W-boson in association with high-transverse-momentum jets in pp collisions at sqrt(s) = 13 TeV with the ATLAS detector",
+    "arxiv_id": "2412.11644",
+    "publication_year": 2024,
+    "analysis_name": "Wplus_high_pT_jets",
+    "energy": "13 TeV",
+    "luminosity": "140 fb^-1",
+    "notes": "Run 2 proton-proton collision data recorded from 2015 to 2018; measurement combines electron and muon channels after separate unfolding."
+  },
+  "analysis_objectives": [
+    {
+      "objective_id": "obj1",
+      "type": "measurement",
+      "target_process": "pp -> W(-> l nu) + jets with at least one jet of pT > 500 GeV",
+      "parameter_of_interest": [
+        "fiducial cross-section in inclusive region",
+        "fiducial cross-section in inclusive 2-jet region",
+        "fiducial cross-section in collinear region",
+        "fiducial cross-section in back-to-back region",
+        "differential cross-sections versus DeltaRmin(l,jet100), pT_lv/pT_closestjet, mjj, leading-jet pT, pT_lv, jet multiplicity, ST"
+      ],
+      "description": "Measure inclusive and differential W+jets production in a boosted jet regime, emphasizing collinear W emission from high-pT jets and high-multiplicity topologies.",
+      "special_considerations": "Results are unfolded to particle level and compared with Sherpa 2.2.11, MadGraph5_aMC@NLO+Pythia8, and fixed-order MCFM W+1j@NNLO predictions."
+    },
+    {
+      "objective_id": "obj2",
+      "type": "differential_measurement",
+      "target_process": "collinear W+jets production",
+      "parameter_of_interest": [
+        "DeltaRmin(l,jet100)",
+        "pT_lv/pT_closestjet",
+        "mjj",
+        "leading-jet pT",
+        "pT_lv",
+        "jet multiplicity",
+        "ST"
+      ],
+      "description": "Probe the phase space where dijet events radiate a W boson or where W+multi-jet production dominates, to test higher-order QCD and electroweak predictions.",
+      "special_considerations": "Collinear region is defined by DeltaRmin(l,jet100) < 2.6; back-to-back region by the inverted requirement."
+    }
+  ],
+  "signal_signatures": [
+    {
+      "signature_id": "sig1",
+      "signal_process": "QCD-induced W+jets",
+      "decay_chain": "pp -> W(-> e nu or mu nu) + jets",
+      "final_state_objects": [
+        "exactly one isolated electron or muon",
+        "missing transverse momentum from neutrino",
+        ">=1 jet with pT > 30 GeV",
+        "leading jet with pT > 500 GeV",
+        "zero b-tagged jets at reconstruction level"
+      ],
+      "analysis_channels": [
+        "electron channel",
+        "muon channel"
+      ],
+      "key_observables": [
+        "DeltaRmin(l,jet100)",
+        "pT_lv/pT_closestjet",
+        "mjj",
+        "leading-jet pT",
+        "pT_lv",
+        "inclusive jet multiplicity",
+        "ST"
+      ],
+      "event_topology_description": "Events contain a leptonic W decay recoiling against at least one very high-pT central jet; the angular distance between the lepton and the closest jet with pT > 100 GeV distinguishes back-to-back W+1 jet topologies from collinear W emission and W+multi-jet topologies.",
+      "special_considerations": "Particle-level fiducial region removes the reconstruction-level b-jet veto to remain inclusive in jet flavour; dressed leptons include photons within DeltaR = 0.1."
+    }
+  ],
+  "background_processes": [
+    {
+      "background_id": "bkg1",
+      "process_name": "ttbar + jets",
+      "category": "irreducible",
+      "estimation_method": "hybrid",
+      "special_treatment": "Normalization extracted from a ttbar control region with >=2 b-tagged jets and parameterized versus jet multiplicity; extra mjj modeling uncertainty applied above 1 TeV.",
+      "notes": "Prompt-lepton background contributing up to about 8% of total expected yield across regions."
+    },
+    {
+      "background_id": "bkg2",
+      "process_name": "Z/gamma* + jets",
+      "category": "irreducible",
+      "estimation_method": "hybrid",
+      "special_treatment": "Normalization extracted from a Z+jets control region with exactly two same-flavour opposite-sign leptons and 60 < mll < 120 GeV, parameterized versus jet multiplicity; extra mjj modeling uncertainty applied.",
+      "notes": "Main contribution comes from one lepton failing acceptance/selection or being misidentified as a jet in the signal region."
+    },
+    {
+      "background_id": "bkg3",
+      "process_name": "Multijet fake-lepton background",
+      "category": "reducible",
+      "estimation_method": "hybrid",
+      "special_treatment": "Normalization extracted from control regions where the lepton fails impact-parameter or isolation requirements; parameterized in lepton pT and |eta|. Checked in a low-ETmiss validation region with no extra uncertainty assigned.",
+      "notes": "Largest in the electron back-to-back region, reaching up to about 20%."
+    },
+    {
+      "background_id": "bkg4",
+      "process_name": "Single-top",
+      "category": "irreducible",
+      "estimation_method": "simulation",
+      "special_treatment": "Estimated directly from MC simulation.",
+      "notes": "Sub-dominant, expected up to about 2-3% depending on lepton flavor."
+    },
+    {
+      "background_id": "bkg5",
+      "process_name": "Diboson",
+      "category": "irreducible",
+      "estimation_method": "simulation",
+      "special_treatment": "Estimated directly from MC simulation.",
+      "notes": "Sub-dominant prompt-lepton background."
+    },
+    {
+      "background_id": "bkg6",
+      "process_name": "Electroweak V+jj",
+      "category": "irreducible",
+      "estimation_method": "simulation",
+      "special_treatment": "EW W+jj is treated as a background and subtracted from data before unfolding; can contribute up to about 10% for large mjj in the inclusive-2 jet region.",
+      "notes": "Interference with QCD-induced vector-boson processes is neglected."
+    },
+    {
+      "background_id": "bkg7",
+      "process_name": "W(->tau nu)+jets",
+      "category": "irreducible",
+      "estimation_method": "simulation",
+      "special_treatment": "Included in stacked signal-plus-background comparison as a background-like process distinct from the main electron/muon signal definition.",
+      "notes": "Present in event-yield tables for all signal regions."
+    }
+  ],
+  "signal_regions": [
+    {
+      "signal_region_id": "SR_inclusive",
+      "associated_signature_ids": [
+        "sig1"
+      ],
+      "selection_summary": "Exactly one trigger-matched electron or muon with pT > 30 GeV, no additional leptons, >=1 jet with pT > 30 GeV and |y| < 2.5, DeltaR(l,jet) > 0.4, leading jet pT > 500 GeV, and b-jet veto.",
+      "fit_observable": "inclusive fiducial event yield and unfolded differential distributions",
+      "binning": "not_specified",
+      "optimization_strategy": "Target boosted W+jets phase space with at least one very high-pT jet.",
+      "purpose": "Primary fiducial measurement region.",
+      "special_considerations": "Electron and muon channels are unfolded separately before combination."
+    },
+    {
+      "signal_region_id": "SR_inclusive2j",
+      "associated_signature_ids": [
+        "sig1"
+      ],
+      "selection_summary": "Inclusive selection plus >=2 jets.",
+      "fit_observable": "mjj integrated and differential cross-section",
+      "binning": "not_specified",
+      "optimization_strategy": "Require a second jet to access dijet kinematics in the boosted regime.",
+      "purpose": "Measure invariant mass of the highest-momentum jet pair and a dedicated inclusive 2-jet fiducial cross-section.",
+      "special_considerations": "mjj is particularly sensitive to modeling issues above the TeV scale."
+    },
+    {
+      "signal_region_id": "SR_collinear",
+      "associated_signature_ids": [
+        "sig1"
+      ],
+      "selection_summary": "Inclusive selection plus DeltaRmin(l,jet100) < 2.6, where jet100 denotes jets with pT > 100 GeV.",
+      "fit_observable": "unfolded cross-sections versus leading-jet pT, pT_lv, jet multiplicity, ST, and collinear-sensitive observables",
+      "binning": "not_specified",
+      "optimization_strategy": "Enhance topologies with W emission close to a high-pT jet and W+>=2 jet configurations.",
+      "purpose": "Probe the collinear enhancement region and multi-jet dynamics.",
+      "special_considerations": "This is the phase space most sensitive to real W emission from dijet events."
+    },
+    {
+      "signal_region_id": "SR_back_to_back",
+      "associated_signature_ids": [
+        "sig1"
+      ],
+      "selection_summary": "Inclusive selection plus DeltaRmin(l,jet100) > 2.6.",
+      "fit_observable": "inclusive fiducial event yield and DeltaRmin / pT_lv/pT_closestjet distributions",
+      "binning": "not_specified",
+      "optimization_strategy": "Select topologies dominated by leading-order W+1 jet production with the W recoiling against the jet.",
+      "purpose": "Reference region complementary to the collinear phase space.",
+      "special_considerations": "Events are expected to peak near pT_lv/pT_closestjet ~ 1 and large lepton-jet separations."
+    }
+  ],
+  "control_regions": [
+    {
+      "control_region_id": "CR_ttbar",
+      "target_backgrounds": [
+        "ttbar + jets"
+      ],
+      "selection_summary": "Same as inclusive region except replace the b-jet veto with a requirement of at least two b-tagged jets.",
+      "fit_observable": "background normalization versus jet multiplicity",
+      "role_in_fit": "normalization_constraint",
+      "justification": "Creates >80% ttbar purity while staying kinematically close to the signal region.",
+      "special_considerations": "Normalization factor set to unity with 10% uncertainty for the 1-jet bin because the contribution there is very small."
+    },
+    {
+      "control_region_id": "CR_Zjets",
+      "target_backgrounds": [
+        "Z/gamma* + jets"
+      ],
+      "selection_summary": "Same as inclusive region except require exactly two same-flavour opposite-sign leptons with 60 < mll < 120 GeV instead of exactly one lepton.",
+      "fit_observable": "background normalization versus jet multiplicity",
+      "role_in_fit": "normalization_constraint",
+      "justification": "Produces approximately 90% Z+jets purity with similar kinematics to the signal region.",
+      "special_considerations": "Jet counting in the signal region excludes misidentified jets matched to generator-level Z-decay electrons to match the control-region definition."
+    },
+    {
+      "control_region_id": "CR_multijet",
+      "target_backgrounds": [
+        "Multijet fake-lepton background"
+      ],
+      "selection_summary": "Same phase space as each signal region, but the lepton must fail either impact-parameter or isolation requirements.",
+      "fit_observable": "background normalization versus lepton pT and |eta|",
+      "role_in_fit": "normalization_constraint",
+      "justification": "Produces >80% multijet purity and captures detector- and momentum-dependent fake-lepton composition.",
+      "special_considerations": "Derived separately in each signal-region phase space."
+    },
+    {
+      "control_region_id": "VR_multijet_lowMET",
+      "target_backgrounds": [
+        "Multijet fake-lepton background"
+      ],
+      "selection_summary": "Lepton satisfies signal criteria but missing transverse momentum is below 100 GeV.",
+      "fit_observable": "observed-versus-predicted distributions for all measured observables",
+      "role_in_fit": "validation",
+      "justification": "Validation region where multijet background exceeds half the yield, used to validate the fake estimate.",
+      "special_considerations": "Has about 8% overlap with the measurement signal region."
+    }
+  ],
+  "fit_setup": [
+    {
+      "fit_id": "fit1",
+      "fit_purpose": "Combine separately unfolded electron and muon cross-sections into averaged fiducial measurements.",
+      "regions_included": [
+        "SR_inclusive",
+        "SR_inclusive2j",
+        "SR_collinear",
+        "SR_back_to_back"
+      ],
+      "parameters_of_interest": [
+        "combined fiducial cross-section in each signal region"
+      ],
+      "nuisance_parameter_types": [
+        "experimental",
+        "theoretical",
+        "background_normalization"
+      ],
+      "fit_strategy": "simultaneous",
+      "differences_between_fit_versions": "Electron and muon channels are first unfolded separately; then a chi2 likelihood fit using the Combiner package combines the channels with most systematics correlated, lepton-specific and multijet uncertainties partially uncorrelated.",
+      "special_considerations": "This is a measurement combination rather than a signal-strength extraction fit."
+    }
+  ],
+  "results": [
+    {
+      "result_id": "res1",
+      "associated_fit_id": "fit1",
+      "result_type": "measurement",
+      "parameter_reported": "Inclusive fiducial cross-section",
+      "numerical_result": "778 +- 3 (stat.) +- 25 (syst.+stat.) fb",
+      "confidence_level": "not_specified",
+      "dominant_uncertainties": "Background modelling, JES/JER, b-tagging, lepton systematics, unfolding",
+      "notes": "MCFM W+1j@NNLO prediction of 765 +26/-26 fb is in good agreement; Sherpa and MadGraph predictions have much larger scale uncertainties."
+    },
+    {
+      "result_id": "res2",
+      "associated_fit_id": "fit1",
+      "result_type": "measurement",
+      "parameter_reported": "Inclusive 2-jet fiducial cross-section",
+      "numerical_result": "684 +- 3 (stat.) +- 23 (syst.+stat.) fb",
+      "confidence_level": "not_specified",
+      "dominant_uncertainties": "Background modelling, JES/JER, b-tagging",
+      "notes": "Dedicated to the >=2-jet selection and mjj-sensitive topology."
+    },
+    {
+      "result_id": "res3",
+      "associated_fit_id": "fit1",
+      "result_type": "measurement",
+      "parameter_reported": "Collinear fiducial cross-section",
+      "numerical_result": "532 +- 3 (stat.) +- 18 (syst.+stat.) fb",
+      "confidence_level": "not_specified",
+      "dominant_uncertainties": "Background modelling, b-tagging, JES/JER",
+      "notes": "Sherpa QCD+EW gives 521 fb; MCFM W+1j@NNLO gives 530 fb before applying EW corrections."
+    },
+    {
+      "result_id": "res4",
+      "associated_fit_id": "fit1",
+      "result_type": "measurement",
+      "parameter_reported": "Back-to-back fiducial cross-section",
+      "numerical_result": "247 +- 2 (stat.) +- 9 (syst.+stat.) fb",
+      "confidence_level": "not_specified",
+      "dominant_uncertainties": "Background modelling and JES/JER",
+      "notes": "Sherpa QCD prediction is 249 fb; MCFM W+1j@NNLO predicts 235 fb."
+    }
+  ],
+  "analysis_design_insights": [
+    {
+      "design_feature": "Topology split using DeltaRmin(l,jet100)",
+      "description": "The analysis partitions the boosted W+jets sample into collinear and back-to-back regions using the minimum separation between the lepton and the nearest jet above 100 GeV.",
+      "reason_for_use": "This directly isolates the enhanced phase space of real W emission from high-pT jets from more standard W+1 jet recoil topologies.",
+      "special_considerations": "Threshold is set at DeltaRmin = 2.6."
+    },
+    {
+      "design_feature": "Semi-data-driven background normalization",
+      "description": "Dominant ttbar, Z+jets, and multijet backgrounds are normalized using dedicated control regions rather than relying only on nominal simulation.",
+      "reason_for_use": "Reduces modeling bias in the high-momentum phase space where MC predictions can be inaccurate.",
+      "special_considerations": "ttbar and Z+jets corrections are parameterized in jet multiplicity; multijet corrections in lepton pT and eta."
+    },
+    {
+      "design_feature": "Particle-level unfolding matched closely to detector-level phase space",
+      "description": "The fiducial particle-level selection mirrors the reconstruction-level region definitions and uses iterative Bayesian unfolding with two iterations.",
+      "reason_for_use": "Provides a robust measurement that is minimally extrapolated and suitable for theory comparison and future recasting.",
+      "special_considerations": "An underflow bin with 400 < leading-jet pT < 500 GeV is included to capture migration across the 500 GeV threshold."
+    },
+    {
+      "design_feature": "Separate e and mu channels with correlated combination",
+      "description": "Electron and muon measurements are unfolded independently and then combined with a chi2 likelihood fit.",
+      "reason_for_use": "Preserves channel-specific detector effects while exploiting the common underlying physics for improved precision.",
+      "special_considerations": "Multijet uncertainties are treated as uncorrelated between channels because fake-lepton compositions differ."
+    }
+  ],
+  "retrieval_features": {
+    "topology_class": "differential",
+    "main_discriminant_type": "other",
+    "region_strategy": "categorized",
+    "sensitivity_drivers": {
+      "dominant_signal_feature": "Boosted leptonic W boson produced with a leading jet above 500 GeV and characteristic collinear or recoil topology encoded in DeltaRmin(l,jet100).",
+      "dominant_background_rejection_feature": "Exactly one isolated lepton, b-jet veto, additional-lepton veto, and dedicated control-region normalization for ttbar, Z+jets, and multijet backgrounds.",
+      "main_limiting_systematics": "Background modelling uncertainties from control-region normalization factors, JES/JER, and b-tagging."
+    }
+  }
+}

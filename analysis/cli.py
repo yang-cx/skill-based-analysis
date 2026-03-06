@@ -8,7 +8,7 @@ import awkward as ak
 import numpy as np
 import yaml
 
-from analysis.common import ensure_dir, run_metadata, write_json
+from analysis.common import ensure_dir, read_json, run_metadata, write_json
 from analysis.config.load_summary import load_and_validate
 from analysis.hists.histmaker import _binning_from_fit, _hist
 from analysis.io.readers import load_events
@@ -22,7 +22,9 @@ from analysis.samples.strategy import build_strategy
 from analysis.samples.weights import event_weight
 from analysis.selections.engine import compute_cutflow, load_regions, region_masks
 from analysis.stats.fit import run_fit
+from analysis.stats.mass_model_selection import run_mass_model_selection
 from analysis.stats.pyhf_workspace import build_workspace
+from analysis.stats.roofit_combined import run_combined_fit
 from analysis.stats.significance import compute_discovery_significance
 
 
@@ -308,6 +310,90 @@ def _write_systematics(out_root: Path) -> Path:
 
 
 
+def _iter_strings(payload: Any) -> List[str]:
+    out: List[str] = []
+    if isinstance(payload, str):
+        out.append(payload)
+        return out
+    if isinstance(payload, dict):
+        for value in payload.values():
+            out.extend(_iter_strings(value))
+        return out
+    if isinstance(payload, list):
+        for value in payload:
+            out.extend(_iter_strings(value))
+        return out
+    return out
+
+
+def _is_hgg_analysis(summary_payload: Dict[str, Any]) -> bool:
+    raw = " ".join(_iter_strings(summary_payload)).lower()
+    raw = raw.replace("γ", "gamma").replace("→", "->")
+    compact = "".join(ch for ch in raw if ch.isalnum())
+    markers = [
+        "higgs",
+        "hto",
+        "higgstogammagamma",
+        "htogammagamma",
+        "h2gammagamma",
+        "hyy",
+    ]
+    return ("gammagamma" in compact) and any(marker in compact for marker in markers)
+
+
+def _enforce_backend_policy(summary_payload: Dict[str, Any], fit_backend: str) -> None:
+    if not _is_hgg_analysis(summary_payload):
+        return
+    backend_name = str(fit_backend).strip().lower()
+    if backend_name != "pyroot_roofit":
+        raise RuntimeError(
+            "H->gammagamma workflow requires --fit-backend pyroot_roofit "
+            "(pyhf is allowed only as a labeled cross-check)."
+        )
+
+
+def _fit_ids_from_regions_cfg(regions_cfg: Dict[str, Any]) -> List[str]:
+    fit_ids = [
+        str(fit.get("fit_id", "FIT_MAIN"))
+        for fit in regions_cfg.get("fits", [])
+        if isinstance(fit, dict)
+    ]
+    return fit_ids if fit_ids else ["FIT_MAIN"]
+
+
+def _fit_regions_from_cfg(regions_cfg: Dict[str, Any], fit_id: str) -> List[str]:
+    for fit in regions_cfg.get("fits", []):
+        if not isinstance(fit, dict):
+            continue
+        if str(fit.get("fit_id", "")) != str(fit_id):
+            continue
+        regs = fit.get("regions_included", [])
+        if isinstance(regs, list):
+            return [str(x) for x in regs if str(x)]
+    return []
+
+
+def _assert_hgg_roofit_artifacts(outputs: Path, fit_id: str, fit_regions: List[str]) -> None:
+    roofit_dir = outputs / "fit" / fit_id / "roofit_combined"
+    required = [
+        roofit_dir / "significance.json",
+        roofit_dir / "signal_dscb_parameters.json",
+        roofit_dir / "sideband_fit_parameters.json",
+        roofit_dir / "cutflow_mass_window_125pm2.json",
+    ]
+    for region in fit_regions:
+        required.append(outputs / "report" / "plots" / "roofit_combined_mgg_{}.png".format(region))
+
+    missing = [str(path) for path in required if not path.exists()]
+    if missing:
+        raise RuntimeError(
+            "Missing required H->gammagamma RooFit artifacts for {}: {}".format(
+                fit_id,
+                ", ".join(missing),
+            )
+        )
+
+
 def _visual_verification_check(outputs: Path) -> None:
     required = [
         "photon_pt_leading.png",
@@ -358,9 +444,16 @@ def run_pipeline(args: argparse.Namespace) -> None:
     normalized = load_and_validate(summary_path)
     normalized_path = outputs / "summary.normalized.json"
     write_json(normalized_path, normalized)
+    is_hgg = _is_hgg_analysis(normalized)
+    _enforce_backend_policy(normalized, args.fit_backend)
 
     registry_path = outputs / "samples.registry.json"
-    registry = build_registry(Path(args.inputs), summary_path, registry_path)
+    registry = build_registry(
+        Path(args.inputs),
+        summary_path,
+        registry_path,
+        target_lumi_fb=float(args.target_lumi_fb),
+    )
     build_strategy(
         registry_path=registry_path,
         regions_path=regions_path,
@@ -387,6 +480,7 @@ def run_pipeline(args: argparse.Namespace) -> None:
     if partition_checks.get("summary", {}).get("status") != "pass":
         raise RuntimeError("partition validation failed: {}".format(partition_checks.get("summary", {})))
     photon_cfg = regions_cfg.get("globals", {}).get("photons", {})
+    fit_ids = _fit_ids_from_regions_cfg(regions_cfg)
 
     for sample in selected:
         events = load_events(
@@ -416,6 +510,22 @@ def run_pipeline(args: argparse.Namespace) -> None:
 
     systematics_path = _write_systematics(outputs)
 
+    for fit_id in fit_ids:
+        model_choice = run_mass_model_selection(
+            fit_id=fit_id,
+            summary_path=normalized_path,
+            hists_dir=outputs / "hists",
+            strategy_path=outputs / "background_modeling_strategy.json",
+            out_path=outputs / "fit" / fit_id / "background_pdf_choice.json",
+        )
+        if model_choice.get("status") != "ok":
+            raise RuntimeError(
+                "mass-model selection failed for {}: {}".format(
+                    fit_id,
+                    model_choice.get("error", "unknown_error"),
+                )
+            )
+
     workspace_path = outputs / "fit" / "workspace.json"
     workspace = build_workspace(
         summary_path=normalized_path,
@@ -425,17 +535,111 @@ def run_pipeline(args: argparse.Namespace) -> None:
         registry_path=registry_path,
     )
 
-    fit_ids = [f.get("fit_id", "FIT_MAIN") for f in regions_cfg.get("fits", []) if isinstance(f, dict)]
-    if not fit_ids:
-        fit_ids = ["FIT_MAIN"]
+    run_pyhf_crosscheck = bool(is_hgg and not bool(getattr(args, "no_pyhf_crosscheck", False)))
     for fit_id in fit_ids:
-        result = run_fit(workspace_path)
-        result["fit_id"] = fit_id
-        write_json(outputs / "fit" / fit_id / "results.json", result)
+        roofit_summary = None
+        if is_hgg:
+            roofit_summary = run_combined_fit(
+                outputs=outputs,
+                registry=registry_path,
+                regions=regions_path,
+                fit_id=fit_id,
+                out_dir=outputs / "fit" / fit_id / "roofit_combined",
+                categories=_fit_regions_from_cfg(regions_cfg, fit_id),
+                fit_range="sidebands",
+                blind_window=(120.0, 130.0),
+                show_window_data=False,
+                signal_scale_for_blind_fit=1.0,
+                compute_asimov_sensitivity=True,
+                asimov_mu_gen=0.0,
+            )
+            signif = read_json(outputs / "fit" / fit_id / "roofit_combined" / "significance.json")
+            signif["fit_id"] = fit_id
+            result = {
+                "status": signif.get("status", "unknown"),
+                "fit_id": fit_id,
+                "backend": "pyroot_roofit",
+                "fit_method": "roofit_combined_category_likelihood",
+                "poi_name": str(signif.get("poi_name", "mu")),
+                "bestfit_poi": float(signif.get("mu_hat", 0.0)),
+                "poi_uncertainty": float(signif.get("mu_hat_error", 0.0)),
+                "bestfit_all": [float(signif.get("mu_hat", 0.0))],
+                "bestfit_errors": [float(signif.get("mu_hat_error", 0.0))],
+                "bestfit_labels": [str(signif.get("poi_name", "mu"))],
+                "twice_nll": (
+                    2.0 * float(signif.get("nll_free"))
+                    if signif.get("nll_free") is not None
+                    else None
+                ),
+                "n_pars": 1,
+            }
+            write_json(outputs / "fit" / fit_id / "results.json", result)
+            write_json(outputs / "fit" / fit_id / "significance.json", signif)
+            primary_backend_name = "pyroot_roofit"
+        else:
+            result = run_fit(workspace_path, backend=args.fit_backend)
+            result["fit_id"] = fit_id
+            write_json(outputs / "fit" / fit_id / "results.json", result)
 
-        signif = compute_discovery_significance(workspace_path)
-        signif["fit_id"] = fit_id
-        write_json(outputs / "fit" / fit_id / "significance.json", signif)
+            signif = compute_discovery_significance(workspace_path, backend=args.fit_backend)
+            signif["fit_id"] = fit_id
+            write_json(outputs / "fit" / fit_id / "significance.json", signif)
+            primary_backend_name = str(args.fit_backend)
+
+        if result.get("status") != "ok":
+            raise RuntimeError(
+                "primary fit failed for {} backend={}: {}".format(
+                    fit_id,
+                    primary_backend_name,
+                    result.get("error", "unknown_error"),
+                )
+            )
+        if signif.get("status") != "ok":
+            raise RuntimeError(
+                "primary significance failed for {} backend={}: {}".format(
+                    fit_id,
+                    primary_backend_name,
+                    signif.get("error", "unknown_error"),
+                )
+            )
+
+        pyhf_fit = None
+        pyhf_sig = None
+        if run_pyhf_crosscheck:
+            pyhf_fit = run_fit(workspace_path, backend="pyhf")
+            pyhf_fit["fit_id"] = fit_id
+            pyhf_fit["crosscheck"] = True
+            pyhf_fit["crosscheck_label"] = "pyhf_template_crosscheck"
+            write_json(outputs / "fit" / fit_id / "results_pyhf_crosscheck.json", pyhf_fit)
+
+            pyhf_sig = compute_discovery_significance(workspace_path, backend="pyhf")
+            pyhf_sig["fit_id"] = fit_id
+            pyhf_sig["crosscheck"] = True
+            pyhf_sig["crosscheck_label"] = "pyhf_template_crosscheck"
+            write_json(outputs / "fit" / fit_id / "significance_pyhf_crosscheck.json", pyhf_sig)
+
+        write_json(
+            outputs / "fit" / fit_id / "fit_backend.json",
+            {
+                "fit_id": fit_id,
+                "primary_backend": primary_backend_name,
+                "workspace": str(workspace_path),
+                "primary_fit_status": result.get("status", "unknown"),
+                "primary_significance_status": signif.get("status", "unknown"),
+                "roofit_combined_summary": (
+                    str(outputs / "fit" / fit_id / "roofit_combined" / "summary.json")
+                    if roofit_summary is not None
+                    else None
+                ),
+                "cross_checks": {
+                    "pyhf": {
+                        "enabled": run_pyhf_crosscheck,
+                        "fit_status": pyhf_fit.get("status", "not_run") if pyhf_fit else "not_run",
+                        "significance_status": pyhf_sig.get("status", "not_run") if pyhf_sig else "not_run",
+                    }
+                },
+            },
+        )
 
     # Reuse plotting module CLI entry for consistency.
     import sys
@@ -455,6 +659,12 @@ def run_pipeline(args: argparse.Namespace) -> None:
             fit_id=fit_id,
             blind_sr=True,
         )
+        if is_hgg:
+            _assert_hgg_roofit_artifacts(
+                outputs=outputs,
+                fit_id=fit_id,
+                fit_regions=_fit_regions_from_cfg(regions_cfg, fit_id),
+            )
 
     report_path = outputs / "report" / "report.md"
     build_report(normalized_path, outputs, report_path)
@@ -464,6 +674,10 @@ def run_pipeline(args: argparse.Namespace) -> None:
     run_manifest = {
         "selected_samples": [s["sample_id"] for s in selected],
         "max_events": args.max_events,
+        "target_lumi_fb": float(args.target_lumi_fb),
+        "fit_backend_primary": args.fit_backend,
+        "analysis_is_hgg": bool(is_hgg),
+        "pyhf_crosscheck_enabled": bool(run_pyhf_crosscheck),
         "meta": run_metadata(summary_path, regions_path, systematics_path),
     }
     run_id = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
@@ -487,6 +701,18 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--max-events", type=int, default=None)
     run.add_argument("--samples", nargs="*", default=[])
     run.add_argument("--all-samples", action="store_true")
+    run.add_argument("--fit-backend", default="pyroot_roofit", choices=["pyhf", "pyroot_roofit"])
+    run.add_argument(
+        "--no-pyhf-crosscheck",
+        action="store_true",
+        help="Disable optional pyhf cross-check artifacts.",
+    )
+    run.add_argument(
+        "--target-lumi-fb",
+        type=float,
+        default=36.1,
+        help="Integrated luminosity in fb^-1 used for MC normalization.",
+    )
 
     return parser
 

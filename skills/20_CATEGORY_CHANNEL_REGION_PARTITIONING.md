@@ -60,6 +60,7 @@ For analyses such as `H -> gamma gamma`, both approaches must be supported:
 - regions must be explicitly defined via selection logic or statistical interpretation
 - region definitions must declare type (`SR`, `CR`, `SB`, `VR`, or `OTHER`)
 - if blinding is active, it must operate at `(category, region)` granularity
+- downstream statistical tools must consume category lists dynamically; no fixed category count should be assumed
 
 ## Layer 2 - Workflow Contract
 
@@ -138,6 +139,9 @@ Downstream users:
 6. Blinding readiness:
 - signal partitions default to `data_shown = false` unless explicit unblinding directive exists
 
+7. Dynamic category compatibility:
+- downstream fit/plot workflows can run with arbitrary number of configured categories without code changes
+
 ## Layer 3 - Tool Binding (Current Repository)
 
 ### Example Inputs
@@ -157,4 +161,3 @@ Downstream users:
 - region definitions should remain structured for machine interpretation
 - diphoton mass analyses should support both window-based and full-fit-domain semantics
 - downstream tools should consume `outputs/manifest/partitions.json` rather than re-deriving partition logic
-

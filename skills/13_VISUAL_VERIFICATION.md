@@ -9,7 +9,10 @@ Policy requirements:
 - validate selection behavior via cut flow and multiplicity diagnostics
 - validate category behavior when categories are used
 - validate final fit quality and residual structure
+- validate control/non-signal region agreement in both pre-fit and post-fit views
+- in blinded mode, verify that non-signal plots show data while signal-region plots hide data
 - apply clear plotting conventions: physical axis labels, uncertainty display where available, consistent binning, appropriate scaling, no misleading smoothing
+- when verification plots are embedded in reports, each plot should include a caption explaining plotted entries and why this diagnostic is required
 
 ## Layer 2 — Workflow Contract
 ### Required Artifacts
@@ -18,6 +21,7 @@ Policy requirements:
 - selection-validation artifacts including cut-flow visualization and photon multiplicity
 - category-validation plot artifacts for each active category
 - final-result plot artifacts including fitted mass spectrum and pull/residual distribution
+- pre-fit and post-fit non-signal-region comparison plot artifacts
 - verification-status artifact that records presence/absence of required diagnostics
 
 ### Acceptance Checks
@@ -26,7 +30,10 @@ Policy requirements:
 - cut-flow visualization and multiplicity diagnostics exist
 - category diagnostics exist for every active category
 - final fit and pull diagnostics exist
+- pre-fit and post-fit non-signal-region diagnostics exist
+- blinding behavior matches policy: data shown in non-signal regions, hidden in signal regions unless explicitly unblinded
 - verification stage fails if any required diagnostic artifact is missing
+- reporting-stage integration should fail if required verification plots are embedded without explanatory captions
 
 ## Layer 3 — Example Implementation
 ### Required Plot Names (Current Repository)

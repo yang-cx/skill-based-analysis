@@ -12,3 +12,4 @@ def test_significance_parser():
         "o.json",
     ])
     assert args.fit_id == "FIT1"
+    assert args.backend == "pyhf"

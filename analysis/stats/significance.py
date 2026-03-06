@@ -3,13 +3,13 @@ from pathlib import Path
 from typing import Any, Dict
 
 import numpy as np
-import pyhf
 
 from analysis.common import ensure_dir, read_json, write_json
+from analysis.stats.roofit_backend import run_roofit_significance
 
 
 
-def compute_discovery_significance(workspace_path: Path) -> Dict[str, Any]:
+def _compute_discovery_significance_pyhf(workspace_path: Path) -> Dict[str, Any]:
     """Compute asymptotic discovery significance using profile likelihood ratio.
 
     Performs two fits:
@@ -18,6 +18,8 @@ def compute_discovery_significance(workspace_path: Path) -> Dict[str, Any]:
 
     Returns q0 = 2*(NLL_mu0 - NLL_muhat) and Z = sqrt(max(q0, 0)).
     """
+
+    import pyhf
 
     ws_spec = read_json(workspace_path)
     ws = pyhf.Workspace(ws_spec)
@@ -53,6 +55,7 @@ def compute_discovery_significance(workspace_path: Path) -> Dict[str, Any]:
             "fit_params_free": par_hat.tolist(),
             "fit_params_mu0": par_mu0.tolist(),
             "note": "Asymptotic profile-likelihood approximation (one-sided).",
+            "backend": "pyhf",
         }
     except Exception as exc:
         return {
@@ -64,7 +67,27 @@ def compute_discovery_significance(workspace_path: Path) -> Dict[str, Any]:
             "twice_nll_mu0": None,
             "q0": None,
             "z_discovery": None,
+            "backend": "pyhf",
         }
+
+
+def compute_discovery_significance(workspace_path: Path, backend: str = "pyhf") -> Dict[str, Any]:
+    backend_name = str(backend).strip().lower()
+    if backend_name == "pyhf":
+        return _compute_discovery_significance_pyhf(workspace_path)
+    if backend_name == "pyroot_roofit":
+        return run_roofit_significance(workspace_path)
+    return {
+        "status": "failed",
+        "poi_name": "mu",
+        "error": "Unsupported significance backend '{}'".format(backend),
+        "mu_hat": None,
+        "twice_nll_free": None,
+        "twice_nll_mu0": None,
+        "q0": None,
+        "z_discovery": None,
+        "backend": backend_name,
+    }
 
 
 
@@ -75,6 +98,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--workspace", required=True)
     parser.add_argument("--fit-id", required=True)
     parser.add_argument("--out", required=True)
+    parser.add_argument("--backend", default="pyhf", choices=["pyhf", "pyroot_roofit"])
     return parser
 
 
@@ -83,7 +107,7 @@ def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
 
-    payload = compute_discovery_significance(Path(args.workspace))
+    payload = compute_discovery_significance(Path(args.workspace), backend=args.backend)
     payload["fit_id"] = args.fit_id
 
     out_path = Path(args.out)
@@ -92,14 +116,21 @@ def main() -> None:
 
     if payload.get("status") == "ok":
         print(
-            "significance {}: q0={:.6g}, Z={:.6g}".format(
+            "significance {} backend={}: q0={:.6g}, Z={:.6g}".format(
                 args.fit_id,
+                payload.get("backend", args.backend),
                 float(payload["q0"]),
                 float(payload["z_discovery"]),
             )
         )
     else:
-        print("significance {}: failed ({})".format(args.fit_id, payload.get("error", "unknown")))
+        print(
+            "significance {} backend={}: failed ({})".format(
+                args.fit_id,
+                payload.get("backend", args.backend),
+                payload.get("error", "unknown"),
+            )
+        )
 
 
 if __name__ == "__main__":

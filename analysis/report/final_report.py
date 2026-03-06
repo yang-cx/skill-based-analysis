@@ -1,12 +1,56 @@
 import argparse
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
-import pyhf
 import yaml
 
 from analysis.common import ensure_dir, read_json, write_json
+
+PRODUCTION_MODE_ORDER = [
+    "ggF",
+    "VBF",
+    "WH",
+    "qqZH",
+    "ggZH",
+    "ttH",
+    "tHjb",
+    "tWH",
+    "bbH",
+    "other_higgs",
+]
+
+
+def _iter_strings(payload: Any) -> List[str]:
+    out: List[str] = []
+    if isinstance(payload, str):
+        out.append(payload)
+        return out
+    if isinstance(payload, dict):
+        for value in payload.values():
+            out.extend(_iter_strings(value))
+        return out
+    if isinstance(payload, list):
+        for value in payload:
+            out.extend(_iter_strings(value))
+        return out
+    return out
+
+
+def _is_hgg_analysis(summary_payload: Dict[str, Any]) -> bool:
+    raw = " ".join(_iter_strings(summary_payload)).lower()
+    raw = raw.replace("γ", "gamma").replace("→", "->")
+    compact = "".join(ch for ch in raw if ch.isalnum())
+    markers = [
+        "higgs",
+        "hto",
+        "higgstogammagamma",
+        "htogammagamma",
+        "h2gammagamma",
+        "hyy",
+    ]
+    return ("gammagamma" in compact) and any(marker in compact for marker in markers)
 
 
 def _kind_map(registry: Dict[str, Any]) -> Dict[str, str]:
@@ -106,6 +150,146 @@ def _aggregate_cutflows(outputs: Path, kind_map: Dict[str, str]) -> Dict[str, Li
                     target["mc_bkg_n_weighted"] += float(row.get("n_weighted", 0.0))
 
     return by_region
+
+
+def _signal_production_mode(sample: Dict[str, Any]) -> str:
+    text = "{} {}".format(
+        str(sample.get("sample_name", "")),
+        str(sample.get("process_name", "")),
+    ).lower()
+
+    if "tth" in text:
+        return "ttH"
+    if "twh" in text:
+        return "tWH"
+    if "thjb" in text or "thbj" in text:
+        return "tHjb"
+    if "bbh" in text:
+        return "bbH"
+    if "ggzh" in text:
+        return "ggZH"
+    if "zh" in text:
+        return "qqZH"
+    if "wph" in text or "wmh" in text or "qq->wh" in text or " wh " in text:
+        return "WH"
+    if "vbf" in text:
+        return "VBF"
+    if "ggh" in text or "ggf" in text or "gg->h" in text or "nnlops" in text:
+        return "ggF"
+    return "other_higgs"
+
+
+def _aggregate_signal_process_cutflow(
+    outputs: Path,
+    registry: Dict[str, Any],
+    category_regions: List[str],
+) -> Dict[str, Any]:
+    sample_to_mode: Dict[str, str] = {}
+    mode_to_samples: Dict[str, set] = {}
+
+    for sample in registry.get("samples", []):
+        if str(sample.get("kind", "")) != "signal":
+            continue
+        sid = str(sample.get("sample_id", ""))
+        if not sid:
+            continue
+        mode = _signal_production_mode(sample)
+        sample_to_mode[sid] = mode
+        mode_to_samples.setdefault(mode, set()).add(sid)
+
+    mode_order = [mode for mode in PRODUCTION_MODE_ORDER if mode in mode_to_samples]
+    for mode in sorted(mode_to_samples.keys()):
+        if mode not in mode_order:
+            mode_order.append(mode)
+
+    final_yields: Dict[str, Dict[str, float]] = {
+        mode: {rid: 0.0 for rid in category_regions} for mode in mode_order
+    }
+    step_order_by_region: Dict[str, List[str]] = {rid: [] for rid in category_regions}
+    step_yields_by_region: Dict[str, Dict[str, Dict[str, float]]] = {
+        rid: {} for rid in category_regions
+    }
+
+    for path in sorted((outputs / "cutflows").glob("*.json")):
+        sample_id = path.stem
+        mode = sample_to_mode.get(sample_id)
+        if mode is None:
+            continue
+
+        payload = read_json(path)
+        region_payload = payload.get("cutflow", {})
+
+        for rid in category_regions:
+            rows = region_payload.get(rid, [])
+            if not rows:
+                continue
+
+            final_yields[mode][rid] += float(rows[-1].get("n_weighted", 0.0))
+            for row in rows:
+                step = str(row.get("name", "step"))
+                if step not in step_order_by_region[rid]:
+                    step_order_by_region[rid].append(step)
+                step_yields_by_region[rid].setdefault(step, {})
+                step_yields_by_region[rid][step][mode] = (
+                    step_yields_by_region[rid][step].get(mode, 0.0)
+                    + float(row.get("n_weighted", 0.0))
+                )
+
+    mode_rows: List[Dict[str, Any]] = []
+    for mode in mode_order:
+        per_region = final_yields[mode]
+        mode_rows.append(
+            {
+                "mode": mode,
+                "n_signal_samples": len(mode_to_samples.get(mode, set())),
+                "final_category_yields": {rid: float(per_region.get(rid, 0.0)) for rid in category_regions},
+                "total_10cat": float(sum(per_region.values())),
+            }
+        )
+
+    combined_per_region = {
+        rid: float(sum(final_yields[mode].get(rid, 0.0) for mode in mode_order))
+        for rid in category_regions
+    }
+
+    region_step_breakdown: Dict[str, Any] = {}
+    for rid in category_regions:
+        steps = step_order_by_region.get(rid, [])
+        if not steps:
+            continue
+        step_rows = []
+        for step in steps:
+            yields_by_mode = {
+                mode: float(step_yields_by_region[rid].get(step, {}).get(mode, 0.0))
+                for mode in mode_order
+            }
+            step_rows.append(
+                {
+                    "name": step,
+                    "yields_by_mode": yields_by_mode,
+                    "combined_signal": float(sum(yields_by_mode.values())),
+                }
+            )
+        region_step_breakdown[rid] = {
+            "step_order": steps,
+            "steps": step_rows,
+        }
+
+    return {
+        "category_regions": list(category_regions),
+        "mode_order": mode_order,
+        "modes": mode_rows,
+        "combined_signal": {
+            "final_category_yields": combined_per_region,
+            "total_10cat": float(sum(combined_per_region.values())),
+        },
+        "region_step_breakdown": region_step_breakdown,
+        "notes": [
+            "Entries are weighted MC yields from the sample-level cutflow files.",
+            "Each category entry uses the final cut step for that region.",
+            "Signal process assignment is grouped into production-mode families.",
+        ],
+    }
 
 
 def _to_float(value: Any) -> float:
@@ -246,6 +430,18 @@ def _collect_plot_names(outputs: Path) -> List[str]:
     return [path.name for path in sorted((outputs / "report" / "plots").glob("*.png"))]
 
 
+def _embedded_plot_blocks(plot_names: List[str], outputs: Path, report_path: Path) -> List[str]:
+    lines: List[str] = []
+    for name in plot_names:
+        abs_path = outputs / "report" / "plots" / name
+        rel_path = Path(os.path.relpath(abs_path, start=report_path.parent)).as_posix()
+        lines.append("### {}".format(name))
+        lines.append("")
+        lines.append("![]({})".format(rel_path))
+        lines.append("")
+    return lines
+
+
 def _mass_window_data_counts(outputs: Path, kind_map: Dict[str, str], region_id: str) -> Dict[str, float]:
     region_dir = outputs / "hists" / region_id
     if not region_dir.exists():
@@ -283,6 +479,18 @@ def _mass_window_data_counts(outputs: Path, kind_map: Dict[str, str], region_id:
 
 
 def _compute_asimov_significance(workspace_path: Path, fit_id: str) -> Dict[str, Any]:
+    try:
+        import pyhf
+    except Exception as exc:
+        payload = {
+            "fit_id": fit_id,
+            "status": "failed",
+            "error": "pyhf import failed: {}".format(exc),
+        }
+        out_path = workspace_path.parent / fit_id / "significance_asimov.json"
+        write_json(out_path, payload)
+        return payload
+
     workspace = pyhf.Workspace(read_json(workspace_path))
     model = workspace.model()
     poi_idx = model.config.poi_index
@@ -395,6 +603,8 @@ def _build_report(
     out_path: Path,
     target_lumi_fb: float,
 ) -> None:
+    summary_payload = read_json(summary_path)
+    is_hgg = _is_hgg_analysis(summary_payload)
     registry = read_json(outputs / "samples.registry.json")
     kind_map = _kind_map(registry)
     process_map = _process_map(registry)
@@ -406,6 +616,17 @@ def _build_report(
     cutflow = _aggregate_cutflows(outputs, kind_map)
     fit_regions = _fit_regions_from_cfg(regions_cfg, fit_id)
     signal_regions = _signal_regions_from_cfg(regions_cfg)
+    signal_category_regions = [rid for rid in fit_regions if rid != "SR_DIPHOTON_INCL"]
+    if not signal_category_regions:
+        signal_category_regions = [rid for rid in signal_regions if rid != "SR_DIPHOTON_INCL"]
+    signal_process_cutflow = _aggregate_signal_process_cutflow(
+        outputs=outputs,
+        registry=registry,
+        category_regions=signal_category_regions,
+    )
+    signal_process_cutflow_path = outputs / "report" / "higgs_production_cutflow_10cat.json"
+    write_json(signal_process_cutflow_path, signal_process_cutflow)
+
     if "SR_DIPHOTON_INCL" in by_region:
         reference_region = "SR_DIPHOTON_INCL"
     elif fit_regions:
@@ -431,6 +652,26 @@ def _build_report(
     mass_counts = _mass_window_data_counts(outputs, kind_map, mass_region)
     fit_results = read_json(outputs / "fit" / fit_id / "results.json")
     significance = read_json(outputs / "fit" / fit_id / "significance.json")
+    primary_backend = str(fit_results.get("backend", significance.get("backend", "unknown")))
+    roofit_dir = outputs / "fit" / fit_id / "roofit_combined"
+    roofit_significance = _load_optional_json(roofit_dir / "significance.json", {})
+    roofit_asimov = _load_optional_json(roofit_dir / "significance_asimov_expected.json", {})
+    roofit_cutflow = _load_optional_json(roofit_dir / "cutflow_mass_window_125pm2.json", {})
+    pyhf_crosscheck_significance = _load_optional_json(
+        outputs / "fit" / fit_id / "significance_pyhf_crosscheck.json",
+        {},
+    )
+    use_roofit_primary = bool(
+        isinstance(roofit_significance, dict) and roofit_significance.get("status") == "ok"
+    )
+    if is_hgg and not use_roofit_primary:
+        raise RuntimeError(
+            "H->gammagamma report requires RooFit combined significance artifact at "
+            "{}".format(roofit_dir / "significance.json")
+        )
+    fit_backend = str(
+        roofit_significance.get("backend", "pyroot_roofit") if use_roofit_primary else primary_backend
+    )
     blinding = read_json(outputs / "report" / "blinding_summary.json")
     strategy = read_json(outputs / "background_modeling_strategy.json")
     signal_pdf = read_json(outputs / "fit" / fit_id / "signal_pdf.json")
@@ -448,6 +689,11 @@ def _build_report(
 
     norm_rows = norm_artifacts["norm_table"]["rows"]
     runtime_lumi_values = norm_artifacts["norm_table"].get("lumi_fb_values", [])
+    lumi_matches_target = bool(
+        runtime_lumi_values
+        and all(np.isfinite(float(v)) and np.isclose(float(v), float(target_lumi_fb), rtol=0.0, atol=1e-9)
+                for v in runtime_lumi_values)
+    )
     top_bkg_rows = [row for row in norm_rows if row.get("kind") == "background"][:12]
     top_sig_rows = [row for row in norm_rows if row.get("kind") == "signal"][:8]
     table_rows = top_bkg_rows + top_sig_rows
@@ -465,6 +711,7 @@ def _build_report(
         "The workflow covers ingestion, object definition, region selection, cut flow, histogram templates, "
         "likelihood fits, profile-likelihood discovery significance, blinding-aware visualization, and final reporting."
     )
+    lines.append("Fit/significance backend for observed results: `{}`.".format(_escape_md(fit_backend)))
     lines.append("")
     lines.append("## 2. Data and Monte Carlo Samples")
     lines.append("")
@@ -604,6 +851,13 @@ def _build_report(
             blinding.get("normalization_fit", {}).get("status", "unknown"),
         )
     )
+    prefit_count = sum(1 for payload in blinding.get("regions", {}).values() if payload.get("prefit_plot"))
+    postfit_count = sum(1 for payload in blinding.get("regions", {}).values() if payload.get("postfit_plot"))
+    lines.append(
+        "Non-signal pre-fit/post-fit visualization counts: pre-fit={}, post-fit={}.".format(
+            prefit_count, postfit_count
+        )
+    )
     lines.append("")
     lines.append("## 6. Cut Flow")
     lines.append("")
@@ -647,11 +901,127 @@ def _build_report(
             )
         )
     lines.append("")
+    if signal_process_cutflow.get("category_regions"):
+        cat_regions = signal_process_cutflow["category_regions"]
+        lines.append("### Higgs-Production Signal Cutflow Across 10 Categories")
+        lines.append("")
+        lines.append(
+            "The table below decomposes signal yields by Higgs production process across the 10 analysis categories."
+        )
+        lines.append(
+            "Each cell is the final weighted yield after full category selection in that category "
+            "(for `SR_2JET`, the final row corresponds to `delta_phi(gg,jj) > 2.6`)."
+        )
+        lines.append("Artifact: `{}`.".format(_escape_md(signal_process_cutflow_path)))
+        lines.append("")
+        lines.append(
+            "| Production process | Signal MC samples | {} | Total (10-cat) |".format(
+                " | ".join(_escape_md(rid) for rid in cat_regions)
+            )
+        )
+        lines.append("| --- | ---: |{} ---: |".format(" ---: |" * len(cat_regions)))
+        for mode_row in signal_process_cutflow.get("modes", []):
+            region_vals = mode_row.get("final_category_yields", {})
+            lines.append(
+                "| {mode} | {n_samples} | {vals} | {total} |".format(
+                    mode=_escape_md(mode_row.get("mode", "unknown")),
+                    n_samples=int(mode_row.get("n_signal_samples", 0)),
+                    vals=" | ".join(
+                        _format_float(region_vals.get(rid, 0.0), 6) for rid in cat_regions
+                    ),
+                    total=_format_float(mode_row.get("total_10cat", 0.0), 6),
+                )
+            )
+
+        combined = signal_process_cutflow.get("combined_signal", {}).get("final_category_yields", {})
+        combined_samples = int(sum(int(row.get("n_signal_samples", 0)) for row in signal_process_cutflow.get("modes", [])))
+        lines.append(
+            "| **all_signal_combined** | **{}** | {} | **{}** |".format(
+                combined_samples,
+                " | ".join(_format_float(combined.get(rid, 0.0), 6) for rid in cat_regions),
+                _format_float(signal_process_cutflow.get("combined_signal", {}).get("total_10cat", 0.0), 6),
+            )
+        )
+        lines.append("")
+
+        twojet = signal_process_cutflow.get("region_step_breakdown", {}).get("SR_2JET", {})
+        step_order = list(twojet.get("step_order", []))
+        if len(step_order) > 1:
+            step_lookup = {
+                str(step.get("name", "step")): step
+                for step in twojet.get("steps", [])
+                if isinstance(step, dict)
+            }
+            lines.append("SR_2JET step-by-step weighted signal cutflow by production process:")
+            lines.append("")
+            lines.append(
+                "| Production process | {} |".format(
+                    " | ".join(_escape_md(step_name) for step_name in step_order)
+                )
+            )
+            lines.append("| --- |{}".format(" ---: |" * len(step_order)))
+            for mode_row in signal_process_cutflow.get("modes", []):
+                mode = str(mode_row.get("mode", "unknown"))
+                lines.append(
+                    "| {mode} | {vals} |".format(
+                        mode=_escape_md(mode),
+                        vals=" | ".join(
+                            _format_float(
+                                step_lookup.get(step_name, {}).get("yields_by_mode", {}).get(mode, 0.0),
+                                6,
+                            )
+                            for step_name in step_order
+                        ),
+                    )
+                )
+            lines.append("")
+
+    roofit_rows = roofit_cutflow.get("categories", []) if isinstance(roofit_cutflow, dict) else []
+    if roofit_rows:
+        lines.append("### RooFit Post-fit Mass-window Cutflow (125 +/- 2 GeV)")
+        lines.append("")
+        lines.append(
+            "Expected signal and background yields from the combined RooFit model in each category mass window."
+        )
+        lines.append(
+            "Background is constrained by sideband fits per category with a shared signal-strength parameter across categories."
+        )
+        lines.append("")
+        lines.append("| Category | Expected signal (post-fit) | Expected background (post-fit) | Observed data in 125 +/- 2 | Observed data in sidebands |")
+        lines.append("| --- | ---: | ---: | ---: | ---: |")
+        for row in roofit_rows:
+            obs_window = row.get("observed_data_in_window")
+            obs_window_text = "blinded" if obs_window is None else _format_float(obs_window, 6)
+            lines.append(
+                "| {cat} | {sig} | {bkg} | {obs_win} | {obs_side} |".format(
+                    cat=_escape_md(row.get("category", "unknown")),
+                    sig=_format_float(row.get("expected_signal_postfit", 0.0), 6),
+                    bkg=_format_float(row.get("expected_background_postfit", 0.0), 6),
+                    obs_win=obs_window_text,
+                    obs_side=_format_float(row.get("observed_data_sidebands", 0.0), 6),
+                )
+            )
+        totals = roofit_cutflow.get("totals", {})
+        total_obs_window = totals.get("observed_data_in_window")
+        total_obs_window_text = "blinded" if total_obs_window is None else _format_float(total_obs_window, 6)
+        lines.append(
+            "| **Total (10 cat)** | **{sig}** | **{bkg}** | **{obs_win}** | **{obs_side}** |".format(
+                sig=_format_float(totals.get("expected_signal_postfit", 0.0), 6),
+                bkg=_format_float(totals.get("expected_background_postfit", 0.0), 6),
+                obs_win=total_obs_window_text,
+                obs_side=_format_float(totals.get("observed_data_sidebands", 0.0), 6),
+            )
+        )
+        lines.append("")
+
     lines.append("## 7. Distributions in Signal and Control Regions")
     lines.append("")
     lines.append(
         "Required validation plots were produced, including photon kinematics, diphoton observables, cut-flow diagnostics, "
         "category plots, fit spectrum, pull, and blinded CR/SR region views."
+    )
+    lines.append(
+        "For non-signal regions, both pre-fit and post-fit overlays are produced with observed data shown."
     )
     if len(categories) == 1 and str(categories[0].get("category_id", "")) == "inclusive":
         lines.append(
@@ -664,9 +1034,9 @@ def _build_report(
             _format_float(mass_counts.get("sideband_105_120_130_160", 0.0), 6),
         )
     )
-    lines.append("Produced plot files:")
-    for name in plot_names:
-        lines.append("- `{}/report/plots/{}`".format(outputs, name))
+    lines.append("Embedded plots:")
+    lines.append("")
+    lines.extend(_embedded_plot_blocks(plot_names, outputs, out_path))
     lines.append("")
     lines.append("## 8. Systematic Uncertainties")
     lines.append("")
@@ -701,39 +1071,102 @@ def _build_report(
     lines.append("")
     lines.append("## 9. Statistical Interpretation")
     lines.append("")
-    lines.append(
-        "Observed fit (`{fit}`): status={status}, {poi}={poi_val}, twice_nll={nll}.".format(
-            fit=fit_id,
-            status=_escape_md(fit_results.get("status", "unknown")),
-            poi=_escape_md(fit_results.get("poi_name", "poi")),
-            poi_val=_format_float(fit_results.get("bestfit_poi"), 6),
-            nll=_format_float(fit_results.get("twice_nll"), 6),
-        )
+    observed_z = float(significance.get("z_discovery", float("nan")))
+    expected_z = float(
+        asimov.get("asimov_signal_plus_background_mu1", {}).get("z_discovery", float("nan"))
     )
-    lines.append(
-        "Observed discovery significance: q0={}, Z={}, mu_hat={}.".format(
-            _format_float(significance.get("q0"), 6),
-            _format_float(significance.get("z_discovery"), 6),
-            _format_float(significance.get("mu_hat"), 6),
-        )
-    )
-    if asimov.get("status") == "ok":
-        b_only = asimov["asimov_background_only"]
-        sb = asimov["asimov_signal_plus_background_mu1"]
+    if use_roofit_primary:
         lines.append(
-            "Asimov (background-only) expected discovery: q0={}, Z={}.".format(
-                _format_float(b_only.get("q0"), 6),
-                _format_float(b_only.get("z_discovery"), 6),
+            "Observed fit (`{fit}`, RooFit combined): backend={backend}, status={status}, {poi}={poi_val} +/- {poi_err}, nll_free={nll_free}, nll_mu0={nll_mu0}.".format(
+                fit=fit_id,
+                backend=_escape_md(str(roofit_significance.get("backend", "pyroot_roofit"))),
+                status=_escape_md(roofit_significance.get("status", "unknown")),
+                poi=_escape_md(roofit_significance.get("poi_name", "mu")),
+                poi_val=_format_float(roofit_significance.get("mu_hat"), 6),
+                poi_err=_format_float(roofit_significance.get("mu_hat_error"), 6),
+                nll_free=_format_float(roofit_significance.get("nll_free"), 8),
+                nll_mu0=_format_float(roofit_significance.get("nll_mu0"), 8),
             )
         )
         lines.append(
-            "Asimov (signal-plus-background, mu=1) expected discovery: q0={}, Z={}.".format(
-                _format_float(sb.get("q0"), 6),
-                _format_float(sb.get("z_discovery"), 6),
+            "Observed discovery significance (backend={}): q0={}, Z={}, mu_hat={}.".format(
+                _escape_md(str(roofit_significance.get("backend", "pyroot_roofit"))),
+                _format_float(roofit_significance.get("q0"), 6),
+                _format_float(roofit_significance.get("z_discovery"), 6),
+                _format_float(roofit_significance.get("mu_hat"), 6),
             )
         )
+        observed_z = float(roofit_significance.get("z_discovery", float("nan")))
+
+        if roofit_asimov.get("status") == "ok":
+            lines.append(
+                "Asimov expected discovery (RooFit, mu_gen={}, {}): q0={}, Z={}.".format(
+                    _format_float(roofit_asimov.get("mu_gen"), 4),
+                    _escape_md(roofit_asimov.get("generation_hypothesis", "unspecified_hypothesis")),
+                    _format_float(roofit_asimov.get("q0"), 6),
+                    _format_float(roofit_asimov.get("z_discovery"), 6),
+                )
+            )
+            expected_z = float(roofit_asimov.get("z_discovery", float("nan")))
+        else:
+            lines.append(
+                "RooFit Asimov expected-significance evaluation failed: {}.".format(
+                    _escape_md(roofit_asimov.get("error", "unknown"))
+                )
+            )
+
+        if pyhf_crosscheck_significance.get("status") == "ok":
+            lines.append(
+                "Template-model cross-check (pyhf): q0={}, Z={}, mu_hat={}.".format(
+                    _format_float(pyhf_crosscheck_significance.get("q0"), 6),
+                    _format_float(pyhf_crosscheck_significance.get("z_discovery"), 6),
+                    _format_float(pyhf_crosscheck_significance.get("mu_hat"), 6),
+                )
+            )
+        else:
+            lines.append(
+                "Template-model cross-check (pyhf): not available in this run."
+            )
     else:
-        lines.append("Asimov expected-significance evaluation failed: {}.".format(_escape_md(asimov.get("error", "unknown"))))
+        lines.append(
+            "Observed fit (`{fit}`): backend={backend}, status={status}, {poi}={poi_val}, twice_nll={nll}.".format(
+                fit=fit_id,
+                backend=_escape_md(fit_backend),
+                status=_escape_md(fit_results.get("status", "unknown")),
+                poi=_escape_md(fit_results.get("poi_name", "poi")),
+                poi_val=_format_float(fit_results.get("bestfit_poi"), 6),
+                nll=_format_float(fit_results.get("twice_nll"), 6),
+            )
+        )
+        lines.append(
+            "Observed discovery significance (backend={}): q0={}, Z={}, mu_hat={}.".format(
+                _escape_md(str(significance.get("backend", fit_backend))),
+                _format_float(significance.get("q0"), 6),
+                _format_float(significance.get("z_discovery"), 6),
+                _format_float(significance.get("mu_hat"), 6),
+            )
+        )
+        if asimov.get("status") == "ok":
+            b_only = asimov["asimov_background_only"]
+            sb = asimov["asimov_signal_plus_background_mu1"]
+            lines.append(
+                "Asimov (background-only) expected discovery: q0={}, Z={}.".format(
+                    _format_float(b_only.get("q0"), 6),
+                    _format_float(b_only.get("z_discovery"), 6),
+                )
+            )
+            lines.append(
+                "Asimov (signal-plus-background, mu=1) expected discovery: q0={}, Z={}.".format(
+                    _format_float(sb.get("q0"), 6),
+                    _format_float(sb.get("z_discovery"), 6),
+                )
+            )
+        else:
+            lines.append(
+                "Asimov expected-significance evaluation failed: {}.".format(
+                    _escape_md(asimov.get("error", "unknown"))
+                )
+            )
     lines.append(
         "Given active SR blinding in visualization products, Asimov results are the primary pre-unblinding sensitivity reference."
     )
@@ -745,12 +1178,10 @@ def _build_report(
         "selection, template construction, fitting, significance, and blinded visualization."
     )
     lines.append(
-        "For `{}`, the observed discovery significance is Z={} and the Asimov mu=1 expected discovery is Z={}.".format(
+        "For `{}`, the observed discovery significance is Z={} and the primary Asimov expected discovery is Z={}.".format(
             fit_id,
-            _format_float(significance.get("z_discovery"), 6),
-            _format_float(
-                asimov.get("asimov_signal_plus_background_mu1", {}).get("z_discovery", float("nan")), 6
-            ),
+            _format_float(observed_z, 6),
+            _format_float(expected_z, 6),
         )
     )
     lines.append(
@@ -777,9 +1208,14 @@ def _build_report(
     lines.append(
         "| Reference-era absolute normalization details | Metadata-driven DSID normalization fields with runtime registry luminosity values and CR-constrained scaling | This is the closest consistent open-data implementation using available metadata and fit constraints | Absolute MC normalization differs from a full production calibration chain |"
     )
-    lines.append(
-        "| Target integrated luminosity 36.1 fb^-1 for Run-2 dataset | Current registry-derived `lumi_fb` values in produced artifacts | Current summary/registry mapping in this repository does not inject a numeric 36.1 fb^-1 into per-sample `lumi_fb`; this is kept explicit rather than silently overwritten | Absolute yield scale is shifted and CR normalization factors absorb part of the mismatch |"
-    )
+    if lumi_matches_target:
+        lines.append(
+            "| Target integrated luminosity for Run-2 dataset | Per-sample `lumi_fb` in registry and normalization artifacts | Central normalization is explicitly enforced to `36.1 fb^-1` for this workflow | No luminosity-rescaling mismatch in central yields |"
+        )
+    else:
+        lines.append(
+            "| Target integrated luminosity 36.1 fb^-1 for Run-2 dataset | Current registry-derived `lumi_fb` values in produced artifacts | Current summary/registry mapping in this repository does not inject a numeric 36.1 fb^-1 into per-sample `lumi_fb`; this is kept explicit rather than silently overwritten | Absolute yield scale is shifted and CR normalization factors absorb part of the mismatch |"
+        )
     lines.append("")
     lines.append("## Appendix A: Agent Decisions and Deviations")
     lines.append("")
@@ -802,9 +1238,14 @@ def _build_report(
     lines.append(
         "| Need for explicit category definitions | Added partition artifacts (`partition_spec.json`, `partition_checks.json`, `partitions.json`) and category table in this report | Makes category/channel definitions explicit, auditable, and machine-readable |"
     )
-    lines.append(
-        "| Target luminosity vs runtime registry luminosity mismatch | Kept runtime `lumi_fb` values explicit in artifacts/report and treated this as a documented deviation | Avoids hidden renormalization and keeps downstream interpretation auditable |"
-    )
+    if lumi_matches_target:
+        lines.append(
+            "| Target luminosity policy | Enforced `lumi_fb = 36.1` in registry/pipeline defaults and surfaced runtime values in artifacts/report | Keeps normalization explicit and reproducible across reruns |"
+        )
+    else:
+        lines.append(
+            "| Target luminosity vs runtime registry luminosity mismatch | Kept runtime `lumi_fb` values explicit in artifacts/report and treated this as a documented deviation | Avoids hidden renormalization and keeps downstream interpretation auditable |"
+        )
     lines.append(
         "| Signal-region plot blinding during reporting | Kept SR data hidden in blinded region plots and referenced Asimov expected sensitivity in interpretation | Preserves blind-analysis behavior while still reporting a complete statistical workflow |"
     )

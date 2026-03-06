@@ -12,10 +12,16 @@ import uproot
 from analysis.common import ensure_dir, run_metadata, write_json
 
 DSID_RE = re.compile(r"_mc_(\d+)\.")
+DEFAULT_TARGET_LUMI_FB = 36.1
 
 
+def _extract_lumi_fb(summary: Dict[str, Any], target_lumi_fb: Optional[float] = None) -> float:
+    if target_lumi_fb is not None:
+        lumi = float(target_lumi_fb)
+        if lumi <= 0.0:
+            raise ValueError("target_lumi_fb must be positive")
+        return lumi
 
-def _extract_lumi_fb(summary: Dict[str, Any]) -> float:
     meta = summary.get("analysis_metadata", {})
     candidates = [
         "integrated_luminosity_fb",
@@ -40,7 +46,7 @@ def _extract_lumi_fb(summary: Dict[str, Any]) -> float:
             if "pb" in unit:
                 return float(v) / 1000.0
             return float(v)
-    return 1.0
+    return DEFAULT_TARGET_LUMI_FB
 
 
 
@@ -157,11 +163,16 @@ def _compute_w_norm(sample: Dict[str, Any]) -> Any:
 
 
 
-def build_registry(inputs: Path, summary_path: Path, out: Path) -> Dict[str, Any]:
+def build_registry(
+    inputs: Path,
+    summary_path: Path,
+    out: Path,
+    target_lumi_fb: Optional[float] = None,
+) -> Dict[str, Any]:
     with summary_path.open() as f:
         summary = json.load(f)
 
-    lumi_fb = _extract_lumi_fb(summary)
+    lumi_fb = _extract_lumi_fb(summary, target_lumi_fb=target_lumi_fb)
     metadata_map = _load_metadata_csv(Path("skills/open-data-specific/metadata.csv"))
 
     data_files, mc_files = _find_files(inputs)
@@ -222,6 +233,10 @@ def build_registry(inputs: Path, summary_path: Path, out: Path) -> Dict[str, Any
     registry = {
         "inputs": str(inputs),
         "summary": str(summary_path),
+        "normalization": {
+            "target_lumi_fb": float(lumi_fb),
+            "source": "cli_override" if target_lumi_fb is not None else "summary_or_default",
+        },
         "samples": samples,
         "meta": run_metadata(summary_path, Path("analysis/regions.yaml")),
     }
@@ -251,6 +266,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--inputs", required=True, help="Input directory containing data/ and MC/")
     parser.add_argument("--summary", required=True, help="Path to analysis summary JSON")
     parser.add_argument("--out", required=True, help="Output registry JSON")
+    parser.add_argument(
+        "--target-lumi-fb",
+        type=float,
+        default=DEFAULT_TARGET_LUMI_FB,
+        help="Integrated luminosity in fb^-1 used for MC normalization.",
+    )
     return parser
 
 
@@ -261,7 +282,12 @@ def main() -> None:
 
     out = Path(args.out)
     ensure_dir(out.parent)
-    registry = build_registry(Path(args.inputs), Path(args.summary), out)
+    registry = build_registry(
+        Path(args.inputs),
+        Path(args.summary),
+        out,
+        target_lumi_fb=float(args.target_lumi_fb),
+    )
 
     print("registry built: {} samples".format(len(registry["samples"])))
     _print_table(registry["samples"])

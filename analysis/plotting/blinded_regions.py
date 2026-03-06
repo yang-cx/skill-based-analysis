@@ -168,6 +168,7 @@ def _plot_region(
     alpha_bkg: float,
     alpha_sig: float,
     show_data: bool,
+    title_suffix: str = "",
 ) -> None:
     edges = hist["edges"]
     bkg = np.clip(alpha_bkg * hist["background"], 0.0, None)
@@ -224,7 +225,7 @@ def _plot_region(
 
     ax.set_xlabel("m(gammagamma) [GeV]")
     ax.set_ylabel("Events / bin")
-    ax.set_title(region_id)
+    ax.set_title("{}{}".format(region_id, title_suffix))
     ax.grid(alpha=0.2)
     if np.max(total) > 0 and np.max(total) / max(np.min(total[total > 0]), 1e-9) > 30:
         ax.set_yscale("log")
@@ -253,6 +254,23 @@ def _plot_placeholder(region_id: str, out_path: Path, text: str) -> None:
     plt.close(fig)
 
 
+def _build_overlap_audit(region_cfg: Dict[str, List[str]]) -> Dict[str, Any]:
+    signal = set(region_cfg.get("signal", []))
+    control = set(region_cfg.get("control", []))
+    intersection = sorted(signal.intersection(control))
+    return {
+        "signal_region_ids": sorted(signal),
+        "control_region_ids": sorted(control),
+        "region_id_overlap": intersection,
+        "has_region_id_overlap": bool(intersection),
+        "event_level_overlap_checked": False,
+        "note": (
+            "This artifact audits declared region-ID overlap only. "
+            "Event-level overlap checks require event-level mask intersection artifacts."
+        ),
+    }
+
+
 def run_blinded_region_visualization(
     outputs: Path,
     registry_path: Path,
@@ -277,11 +295,16 @@ def run_blinded_region_visualization(
 
     plots_dir = ensure_dir(outputs / "report" / "plots")
     per_region = {}
+    overlap_audit = _build_overlap_audit(region_cfg)
+    overlap_audit_path = outputs / "report" / "blinding_overlap_audit.json"
 
     for rid in region_cfg["all"]:
         in_sr = rid in region_cfg["signal"]
         show_data = not (blind_sr and in_sr)
+        kind = "signal" if in_sr else ("control" if rid in region_cfg["control"] else "validation")
         plot_path = plots_dir / ("blinded_region_{}.png".format(rid))
+        prefit_plot_path = plots_dir / ("prefit_region_{}.png".format(rid))
+        postfit_plot_path = plots_dir / ("postfit_region_{}.png".format(rid))
 
         hist = region_hists.get(rid)
         if hist is None:
@@ -290,10 +313,23 @@ def run_blinded_region_visualization(
                 out_path=plot_path,
                 text="No histogram template available for this region",
             )
+            if not in_sr:
+                _plot_placeholder(
+                    region_id=rid,
+                    out_path=prefit_plot_path,
+                    text="No histogram template available for this region",
+                )
+                _plot_placeholder(
+                    region_id=rid,
+                    out_path=postfit_plot_path,
+                    text="No histogram template available for this region",
+                )
             per_region[rid] = {
-                "kind": "signal" if in_sr else ("control" if rid in region_cfg["control"] else "validation"),
+                "kind": kind,
                 "data_shown": bool(show_data),
                 "plot": str(plot_path),
+                "prefit_plot": str(prefit_plot_path) if not in_sr else None,
+                "postfit_plot": str(postfit_plot_path) if not in_sr else None,
                 "observable": None,
                 "missing_histogram": True,
             }
@@ -306,12 +342,39 @@ def run_blinded_region_visualization(
             alpha_bkg=alpha_bkg,
             alpha_sig=alpha_sig,
             show_data=show_data,
+            title_suffix=" (primary)",
         )
 
+        prefit_out = None
+        postfit_out = None
+        if not in_sr:
+            _plot_region(
+                region_id=rid,
+                hist=hist,
+                out_path=prefit_plot_path,
+                alpha_bkg=1.0,
+                alpha_sig=1.0,
+                show_data=True,
+                title_suffix=" (pre-fit)",
+            )
+            _plot_region(
+                region_id=rid,
+                hist=hist,
+                out_path=postfit_plot_path,
+                alpha_bkg=alpha_bkg,
+                alpha_sig=alpha_sig,
+                show_data=True,
+                title_suffix=" (post-fit)",
+            )
+            prefit_out = str(prefit_plot_path)
+            postfit_out = str(postfit_plot_path)
+
         per_region[rid] = {
-            "kind": "signal" if in_sr else ("control" if rid in region_cfg["control"] else "validation"),
+            "kind": kind,
             "data_shown": bool(show_data),
             "plot": str(plot_path),
+            "prefit_plot": prefit_out,
+            "postfit_plot": postfit_out,
             "observable": hist["observable"],
             "missing_histogram": False,
         }
@@ -335,11 +398,13 @@ def run_blinded_region_visualization(
         "control_regions": region_cfg["control"],
         "signal_regions": region_cfg["signal"],
         "normalization_fit": fit_payload,
+        "overlap_audit_path": str(overlap_audit_path),
         "regions": per_region,
     }
 
     ensure_dir(outputs / "fit" / fit_id)
     write_json(outputs / "fit" / fit_id / "blinded_cr_fit.json", fit_payload)
+    write_json(overlap_audit_path, overlap_audit)
     write_json(outputs / "report" / "blinding_summary.json", summary)
     return summary
 

@@ -22,6 +22,7 @@ Policy requirements:
 - fit and significance stages pass when workspace exists
 - blinding, histogram, yield, cut-flow, and report artifacts are all present for completion
 - reruns with same inputs/configuration produce consistent metadata fingerprints
+- for H->gammagamma resonance fitting, include a PyROOT/RooFit backend-specific smoke check and export the same standard fit/significance schemas
 
 ## Layer 3 — Example Implementation
 ### Smoke Tests (Current Repository)
@@ -38,3 +39,4 @@ Policy requirements:
 - include config hash from normalized summary, regions config, and systematics config
 - use stable file ordering and fixed seeds when sampling
 - store run manifests under a dedicated run directory
+- record fit backend in run metadata, with `pyroot_roofit` as primary for H->gammagamma workflows

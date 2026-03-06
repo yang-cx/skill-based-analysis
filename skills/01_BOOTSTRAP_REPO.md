@@ -8,6 +8,7 @@ Policy requirements:
 - Keep infrastructure generic enough to support multiple channels and observables.
 - Ensure the end-to-end pipeline can be rerun reproducibly.
 - Avoid embedding analysis-specific thresholds directly in infrastructure code.
+- Keep PyROOT dependencies isolated and available as a first-class requirement for H->gammagamma resonance-fit workflows.
 
 ## Layer 2 — Workflow Contract
 ### Required Artifacts
@@ -21,6 +22,7 @@ Policy requirements:
 - orchestrator entrypoint is discoverable and runnable
 - at least one validation stage executes from the orchestrator
 - tests can be invoked and report pass/fail status
+- H->gammagamma production pipeline is runnable with required PyROOT/RooFit backend support; non-resonance paths may remain runnable without PyROOT
 
 ## Layer 3 — Example Implementation
 ### Required Structure (Current Repository)

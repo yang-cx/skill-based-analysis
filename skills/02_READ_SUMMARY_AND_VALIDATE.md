@@ -10,6 +10,7 @@ Policy requirements:
 - reported fit references must resolve to declared fits
 - SR/CR overlap policy must be explicit: mutually exclusive by default, with any exception declared and justified
 - invalid or ambiguous analysis definitions must fail fast
+- this validation skill is executed after `22_AGENT_PRE_FLIGHT_FACT_CHECK.md` has confirmed execution readiness
 
 ## Layer 2 — Workflow Contract
 ### Required Artifacts
@@ -33,3 +34,6 @@ Policy requirements:
 ### Outputs (Current Repository)
 - `outputs/summary.normalized.json`
 - console inventory with number of SR/CR, fit IDs, observables, and POIs
+
+### Related Skills
+- `22_AGENT_PRE_FLIGHT_FACT_CHECK.md`

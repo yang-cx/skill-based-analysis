@@ -3,13 +3,15 @@ from pathlib import Path
 from typing import Any, Dict
 
 import numpy as np
-import pyhf
 
 from analysis.common import ensure_dir, read_json, write_json
+from analysis.stats.roofit_backend import run_roofit_fit
 
 
 
-def run_fit(workspace_path: Path) -> Dict[str, Any]:
+def _run_pyhf_fit(workspace_path: Path) -> Dict[str, Any]:
+    import pyhf
+
     ws_spec = read_json(workspace_path)
     ws = pyhf.Workspace(ws_spec)
     model = ws.model()
@@ -30,6 +32,7 @@ def run_fit(workspace_path: Path) -> Dict[str, Any]:
             "twice_nll": float(twice_nll),
             "status": "ok",
             "n_pars": int(len(bestfit)),
+            "backend": "pyhf",
         }
     except Exception as exc:
         # Keep pipeline executable and emit actionable diagnostics.
@@ -41,15 +44,35 @@ def run_fit(workspace_path: Path) -> Dict[str, Any]:
             "status": "failed",
             "error": str(exc),
             "n_pars": int(len(model.config.par_names)),
+            "backend": "pyhf",
         }
+
+
+def run_fit(workspace_path: Path, backend: str = "pyhf") -> Dict[str, Any]:
+    backend_name = str(backend).strip().lower()
+    if backend_name == "pyhf":
+        return _run_pyhf_fit(workspace_path)
+    if backend_name == "pyroot_roofit":
+        return run_roofit_fit(workspace_path)
+    return {
+        "status": "failed",
+        "poi_name": "mu",
+        "bestfit_poi": 1.0,
+        "bestfit_all": [],
+        "twice_nll": None,
+        "n_pars": 0,
+        "backend": backend_name,
+        "error": "Unsupported fit backend '{}'".format(backend),
+    }
 
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run pyhf fit")
+    parser = argparse.ArgumentParser(description="Run statistical fit")
     parser.add_argument("--workspace", required=True)
     parser.add_argument("--fit-id", required=True)
     parser.add_argument("--out", required=True)
+    parser.add_argument("--backend", default="pyhf", choices=["pyhf", "pyroot_roofit"])
     return parser
 
 
@@ -58,14 +81,22 @@ def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
 
-    result = run_fit(Path(args.workspace))
+    result = run_fit(Path(args.workspace), backend=args.backend)
     result["fit_id"] = args.fit_id
 
     out_path = Path(args.out)
     ensure_dir(out_path.parent)
     write_json(out_path, result)
 
-    print("fit {} status={} poi({})={:.6g}".format(args.fit_id, result["status"], result["poi_name"], result["bestfit_poi"]))
+    print(
+        "fit {} backend={} status={} poi({})={:.6g}".format(
+            args.fit_id,
+            result.get("backend", args.backend),
+            result["status"],
+            result["poi_name"],
+            result["bestfit_poi"],
+        )
+    )
 
 
 if __name__ == "__main__":

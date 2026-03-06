@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -51,6 +52,19 @@ def _region_inventory(regions_path: Path) -> List[Dict]:
 
 def _plot_links(plots_dir: Path) -> List[str]:
     return [p.name for p in sorted(plots_dir.glob("*.png"))]
+
+
+
+def _embedded_plot_blocks(plot_names: List[str], outputs: Path, report_path: Path) -> List[str]:
+    lines: List[str] = []
+    for name in plot_names:
+        abs_path = outputs / "report" / "plots" / name
+        rel_path = Path(os.path.relpath(abs_path, start=report_path.parent)).as_posix()
+        lines.append("### {}".format(name))
+        lines.append("")
+        lines.append("![]({})".format(rel_path))
+        lines.append("")
+    return lines
 
 
 
@@ -173,6 +187,21 @@ def build_report(summary_path: Path, outputs: Path, out_path: Path) -> None:
     strategy = _load_background_strategy(outputs)
     blinding = _load_blinding_summary(outputs)
     kindmap = _kind_map(registry)
+    fit_backends = sorted(
+        {
+            str(item.get("backend", "")).strip()
+            for item in fit_results
+            if str(item.get("backend", "")).strip()
+        }
+    )
+    sig_backends = sorted(
+        {
+            str(item.get("backend", "")).strip()
+            for item in significance.values()
+            if isinstance(item, dict) and str(item.get("backend", "")).strip()
+        }
+    )
+    backend_summary = fit_backends or sig_backends or ["pyhf"]
 
     by_kind_region, sample_region = _aggregate_region_yields(yields, kindmap)
     signal_regions = [
@@ -200,7 +229,10 @@ def build_report(summary_path: Path, outputs: Path, out_path: Path) -> None:
     lines.append("")
     lines.append("This run executes a complete config-driven diphoton pipeline over the available open-data sample registry.")
     lines.append("It includes summary validation, sample normalization, event/object building, region selections, cut flow and yields,")
-    lines.append("histogram template production, pyhf workspace construction, fitting, plotting, and report generation.")
+    lines.append(
+        "histogram template production, workspace construction, fitting, plotting, and report generation."
+    )
+    lines.append("- Fit/significance backend(s): `{}`".format(", ".join(backend_summary)))
     lines.append("")
     lines.append("## Metadata")
     lines.append("")
@@ -253,6 +285,11 @@ def build_report(summary_path: Path, outputs: Path, out_path: Path) -> None:
         shown = sum(1 for r in blinding.get("regions", {}).values() if r.get("data_shown"))
         hidden = sum(1 for r in blinding.get("regions", {}).values() if not r.get("data_shown"))
         lines.append("- Regions with data shown: {}, hidden: {}".format(shown, hidden))
+        prefit_count = sum(1 for r in blinding.get("regions", {}).values() if r.get("prefit_plot"))
+        postfit_count = sum(1 for r in blinding.get("regions", {}).values() if r.get("postfit_plot"))
+        lines.append(
+            "- Non-signal comparison plots: pre-fit = {}, post-fit = {}".format(prefit_count, postfit_count)
+        )
     else:
         lines.append("No explicit blinding-summary output was found.")
     lines.append("")
@@ -344,9 +381,11 @@ def build_report(summary_path: Path, outputs: Path, out_path: Path) -> None:
             twice_nll_str = "{:.6g}".format(float(twice_nll))
         else:
             twice_nll_str = "n/a"
+        backend = str(res.get("backend", "pyhf"))
         lines.append(
-            "- `{}`: status = {}, {} = {:.4f}, twice_nll = {}".format(
+            "- `{}`: backend = {}, status = {}, {} = {:.4f}, twice_nll = {}".format(
                 res.get("fit_id", "FIT"),
+                backend,
                 res.get("status", "unknown"),
                 res.get("poi_name", "poi"),
                 float(res.get("bestfit_poi", 0.0)),
@@ -360,10 +399,12 @@ def build_report(summary_path: Path, outputs: Path, out_path: Path) -> None:
     if not significance:
         lines.append("No significance outputs were found.")
     for fit_id, sig in significance.items():
+        backend = str(sig.get("backend", "pyhf"))
         if sig.get("status") == "ok":
             lines.append(
-                "- `{}`: q0 = {:.6g}, Z = {:.6g}, mu_hat = {:.6g}".format(
+                "- `{}`: backend = {}, q0 = {:.6g}, Z = {:.6g}, mu_hat = {:.6g}".format(
                     fit_id,
+                    backend,
                     float(sig.get("q0", 0.0)),
                     float(sig.get("z_discovery", 0.0)),
                     float(sig.get("mu_hat", 0.0)),
@@ -371,8 +412,8 @@ def build_report(summary_path: Path, outputs: Path, out_path: Path) -> None:
             )
         else:
             lines.append(
-                "- `{}`: significance failed ({})".format(
-                    fit_id, sig.get("error", "unknown")
+                "- `{}`: backend = {}, significance failed ({})".format(
+                    fit_id, backend, sig.get("error", "unknown")
                 )
             )
 
@@ -402,8 +443,12 @@ def build_report(summary_path: Path, outputs: Path, out_path: Path) -> None:
     lines.append("")
     lines.append("## Plot Artifacts")
     lines.append("")
-    for name in plots:
-        lines.append("- `plots/{}`".format(name))
+    if not plots:
+        lines.append("No plot artifacts were produced.")
+    else:
+        lines.append("Embedded plots:")
+        lines.append("")
+        lines.extend(_embedded_plot_blocks(plots, outputs, out_path))
 
     ensure_dir(out_path.parent)
     out_path.write_text("\n".join(lines) + "\n")
