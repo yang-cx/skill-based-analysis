@@ -6,10 +6,14 @@ import numpy as np
 
 from analysis.common import ensure_dir, read_json, write_json
 from analysis.stats.roofit_backend import run_roofit_fit
+from analysis.stats.stattool_backend import (
+    resolve_pyhf_backend,
+    run_stattool_fit,
+)
 
 
 
-def _run_pyhf_fit(workspace_path: Path) -> Dict[str, Any]:
+def _run_pyhf_fit_native(workspace_path: Path) -> Dict[str, Any]:
     import pyhf
 
     ws_spec = read_json(workspace_path)
@@ -33,6 +37,7 @@ def _run_pyhf_fit(workspace_path: Path) -> Dict[str, Any]:
             "status": "ok",
             "n_pars": int(len(bestfit)),
             "backend": "pyhf",
+            "pyhf_backend": "native",
         }
     except Exception as exc:
         # Keep pipeline executable and emit actionable diagnostics.
@@ -45,13 +50,21 @@ def _run_pyhf_fit(workspace_path: Path) -> Dict[str, Any]:
             "error": str(exc),
             "n_pars": int(len(model.config.par_names)),
             "backend": "pyhf",
+            "pyhf_backend": "native",
         }
 
 
-def run_fit(workspace_path: Path, backend: str = "pyhf") -> Dict[str, Any]:
+def run_fit(
+    workspace_path: Path,
+    backend: str = "pyhf",
+    pyhf_backend: str = "native",
+) -> Dict[str, Any]:
     backend_name = str(backend).strip().lower()
     if backend_name == "pyhf":
-        return _run_pyhf_fit(workspace_path)
+        resolved_pyhf_backend = resolve_pyhf_backend(pyhf_backend)
+        if resolved_pyhf_backend == "stattool":
+            return run_stattool_fit(workspace_path, poi_name="mu")
+        return _run_pyhf_fit_native(workspace_path)
     if backend_name == "pyroot_roofit":
         return run_roofit_fit(workspace_path)
     return {
@@ -62,6 +75,7 @@ def run_fit(workspace_path: Path, backend: str = "pyhf") -> Dict[str, Any]:
         "twice_nll": None,
         "n_pars": 0,
         "backend": backend_name,
+        "pyhf_backend": None,
         "error": "Unsupported fit backend '{}'".format(backend),
     }
 
@@ -73,6 +87,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--fit-id", required=True)
     parser.add_argument("--out", required=True)
     parser.add_argument("--backend", default="pyhf", choices=["pyhf", "pyroot_roofit"])
+    parser.add_argument(
+        "--pyhf-backend",
+        default="native",
+        choices=["native", "stattool", "auto"],
+        help="PyHF implementation backend when --backend pyhf.",
+    )
     return parser
 
 
@@ -81,7 +101,11 @@ def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
 
-    result = run_fit(Path(args.workspace), backend=args.backend)
+    result = run_fit(
+        Path(args.workspace),
+        backend=args.backend,
+        pyhf_backend=args.pyhf_backend,
+    )
     result["fit_id"] = args.fit_id
 
     out_path = Path(args.out)

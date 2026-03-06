@@ -13,3 +13,4 @@ def test_significance_parser():
     ])
     assert args.fit_id == "FIT1"
     assert args.backend == "pyhf"
+    assert args.pyhf_backend == "native"

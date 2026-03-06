@@ -12,6 +12,7 @@ from analysis.common import ensure_dir, read_json, run_metadata, write_json
 from analysis.config.load_summary import load_and_validate
 from analysis.hists.histmaker import _binning_from_fit, _hist
 from analysis.io.readers import load_events
+from analysis.io.rootml_backend import load_events_with_rootml_cache, rootmltool_is_available
 from analysis.objects.photons import build_photons
 from analysis.plotting.blinded_regions import run_blinded_region_visualization
 from analysis.plotting.plots import main as plotting_main
@@ -22,10 +23,12 @@ from analysis.samples.strategy import build_strategy
 from analysis.samples.weights import event_weight
 from analysis.selections.engine import compute_cutflow, load_regions, region_masks
 from analysis.stats.fit import run_fit
+from analysis.stats.stattool_backend import resolve_pyhf_backend, stattool_is_available
 from analysis.stats.mass_model_selection import run_mass_model_selection
 from analysis.stats.pyhf_workspace import build_workspace
 from analysis.stats.roofit_combined import run_combined_fit
 from analysis.stats.significance import compute_discovery_significance
+from analysis.validation.parity import run_parity_check
 
 
 
@@ -430,11 +433,59 @@ def _visual_verification_check(outputs: Path) -> None:
         raise RuntimeError("visual verification failed, missing: {}".format(", ".join(missing)))
 
 
+def _resolve_event_backend(requested_backend: str) -> str:
+    backend = str(requested_backend).strip().lower()
+    if backend in {"native", "rootmltool"}:
+        return backend
+    if backend != "auto":
+        raise RuntimeError("Unsupported event backend: {}".format(requested_backend))
+
+    available, _reason = rootmltool_is_available()
+    if available:
+        return "rootmltool"
+    return "native"
+
+
+def _run_parity_check_command(args: argparse.Namespace) -> None:
+    out_path = Path(args.out) if args.out else None
+    report = run_parity_check(
+        baseline_outputs=Path(args.baseline),
+        candidate_outputs=Path(args.candidate),
+        abs_tol=float(args.abs_tol),
+        rel_tol=float(args.rel_tol),
+        out_path=out_path,
+    )
+    print("parity status={}".format(report.get("status", "unknown")))
+    print("failed_metrics={}".format(report.get("counts", {}).get("failed_metrics", 0)))
+    print(
+        "missing_in_candidate={}".format(
+            report.get("counts", {}).get("missing_in_candidate", 0)
+        )
+    )
+    print(
+        "extra_in_candidate={}".format(
+            report.get("counts", {}).get("extra_in_candidate", 0)
+        )
+    )
+    if bool(args.fail_on_mismatch) and report.get("status") != "pass":
+        raise RuntimeError("parity check failed")
+
+
 
 def run_pipeline(args: argparse.Namespace) -> None:
     outputs = Path(args.outputs)
     ensure_dir(outputs)
-    for sub in ["cutflows", "yields", "hists", "fit", "report", "cache", "regions", "runs", "manifest"]:
+    for sub in [
+        "cutflows",
+        "yields",
+        "hists",
+        "fit",
+        "report",
+        "cache",
+        "regions",
+        "runs",
+        "manifest",
+    ]:
         ensure_dir(outputs / sub)
 
     summary_path = Path(args.summary)
@@ -468,6 +519,14 @@ def run_pipeline(args: argparse.Namespace) -> None:
     )
     if not selected:
         raise RuntimeError("No samples selected for run")
+    event_backend = _resolve_event_backend(args.event_backend)
+    rootml_cache_dir = outputs / "cache" / "rootmltool"
+    ensure_dir(rootml_cache_dir)
+    print(
+        "event_backend_requested={} resolved={}".format(
+            args.event_backend, event_backend
+        )
+    )
 
     regions_cfg = load_regions(regions_path)
     partition_checks = build_partitions(
@@ -483,12 +542,30 @@ def run_pipeline(args: argparse.Namespace) -> None:
     fit_ids = _fit_ids_from_regions_cfg(regions_cfg)
 
     for sample in selected:
-        events = load_events(
-            sample["files"],
-            tree_name=sample.get("tree_name", "analysis"),
-            branches=_required_branches(),
-            max_events=args.max_events,
-        )
+        if event_backend == "rootmltool":
+            events, rootml_meta = load_events_with_rootml_cache(
+                sample_id=str(sample["sample_id"]),
+                files=sample["files"],
+                tree_name=sample.get("tree_name", "analysis"),
+                branches=_required_branches(),
+                max_events=args.max_events,
+                cache_dir=rootml_cache_dir,
+                reuse_cache=not bool(args.no_rootml_cache_reuse),
+            )
+            print(
+                "sample={} rootml_cache_hit={} cache={}".format(
+                    sample["sample_id"],
+                    rootml_meta.get("cache_hit"),
+                    rootml_meta.get("cache_path"),
+                )
+            )
+        else:
+            events = load_events(
+                sample["files"],
+                tree_name=sample.get("tree_name", "analysis"),
+                branches=_required_branches(),
+                max_events=args.max_events,
+            )
         events = build_photons(events, photon_cfg)
         weights = event_weight(events, sample)
 
@@ -536,6 +613,19 @@ def run_pipeline(args: argparse.Namespace) -> None:
     )
 
     run_pyhf_crosscheck = bool(is_hgg and not bool(getattr(args, "no_pyhf_crosscheck", False)))
+    stattool_available, stattool_reason = stattool_is_available()
+    pyhf_backend_resolved = (
+        resolve_pyhf_backend(args.pyhf_backend)
+        if (str(args.fit_backend).strip().lower() == "pyhf" or run_pyhf_crosscheck)
+        else str(args.pyhf_backend)
+    )
+    print(
+        "pyhf_backend_requested={} resolved={} stattool_available={}".format(
+            args.pyhf_backend,
+            pyhf_backend_resolved,
+            stattool_available,
+        )
+    )
     for fit_id in fit_ids:
         roofit_summary = None
         if is_hgg:
@@ -577,11 +667,19 @@ def run_pipeline(args: argparse.Namespace) -> None:
             write_json(outputs / "fit" / fit_id / "significance.json", signif)
             primary_backend_name = "pyroot_roofit"
         else:
-            result = run_fit(workspace_path, backend=args.fit_backend)
+            result = run_fit(
+                workspace_path,
+                backend=args.fit_backend,
+                pyhf_backend=args.pyhf_backend,
+            )
             result["fit_id"] = fit_id
             write_json(outputs / "fit" / fit_id / "results.json", result)
 
-            signif = compute_discovery_significance(workspace_path, backend=args.fit_backend)
+            signif = compute_discovery_significance(
+                workspace_path,
+                backend=args.fit_backend,
+                pyhf_backend=args.pyhf_backend,
+            )
             signif["fit_id"] = fit_id
             write_json(outputs / "fit" / fit_id / "significance.json", signif)
             primary_backend_name = str(args.fit_backend)
@@ -606,13 +704,21 @@ def run_pipeline(args: argparse.Namespace) -> None:
         pyhf_fit = None
         pyhf_sig = None
         if run_pyhf_crosscheck:
-            pyhf_fit = run_fit(workspace_path, backend="pyhf")
+            pyhf_fit = run_fit(
+                workspace_path,
+                backend="pyhf",
+                pyhf_backend=args.pyhf_backend,
+            )
             pyhf_fit["fit_id"] = fit_id
             pyhf_fit["crosscheck"] = True
             pyhf_fit["crosscheck_label"] = "pyhf_template_crosscheck"
             write_json(outputs / "fit" / fit_id / "results_pyhf_crosscheck.json", pyhf_fit)
 
-            pyhf_sig = compute_discovery_significance(workspace_path, backend="pyhf")
+            pyhf_sig = compute_discovery_significance(
+                workspace_path,
+                backend="pyhf",
+                pyhf_backend=args.pyhf_backend,
+            )
             pyhf_sig["fit_id"] = fit_id
             pyhf_sig["crosscheck"] = True
             pyhf_sig["crosscheck_label"] = "pyhf_template_crosscheck"
@@ -623,6 +729,10 @@ def run_pipeline(args: argparse.Namespace) -> None:
             {
                 "fit_id": fit_id,
                 "primary_backend": primary_backend_name,
+                "pyhf_backend_requested": str(args.pyhf_backend),
+                "pyhf_backend_resolved": str(pyhf_backend_resolved),
+                "stattool_available": bool(stattool_available),
+                "stattool_availability_reason": str(stattool_reason),
                 "workspace": str(workspace_path),
                 "primary_fit_status": result.get("status", "unknown"),
                 "primary_significance_status": signif.get("status", "unknown"),
@@ -675,7 +785,14 @@ def run_pipeline(args: argparse.Namespace) -> None:
         "selected_samples": [s["sample_id"] for s in selected],
         "max_events": args.max_events,
         "target_lumi_fb": float(args.target_lumi_fb),
+        "event_backend_requested": str(args.event_backend),
+        "event_backend_resolved": str(event_backend),
+        "rootml_cache_dir": str(rootml_cache_dir),
         "fit_backend_primary": args.fit_backend,
+        "pyhf_backend_requested": str(args.pyhf_backend),
+        "pyhf_backend_resolved": str(pyhf_backend_resolved),
+        "stattool_available": bool(stattool_available),
+        "stattool_availability_reason": str(stattool_reason),
         "analysis_is_hgg": bool(is_hgg),
         "pyhf_crosscheck_enabled": bool(run_pyhf_crosscheck),
         "meta": run_metadata(summary_path, regions_path, systematics_path),
@@ -713,6 +830,34 @@ def build_parser() -> argparse.ArgumentParser:
         default=36.1,
         help="Integrated luminosity in fb^-1 used for MC normalization.",
     )
+    run.add_argument(
+        "--event-backend",
+        default="native",
+        choices=["native", "rootmltool", "auto"],
+        help="Event I/O backend. Default keeps native path; 'auto' prefers rootmltool when available.",
+    )
+    run.add_argument(
+        "--no-rootml-cache-reuse",
+        action="store_true",
+        help="Force regeneration of rootmltool JSON cache artifacts.",
+    )
+    run.add_argument(
+        "--pyhf-backend",
+        default="native",
+        choices=["native", "stattool", "auto"],
+        help="PyHF implementation backend (additive). Default keeps native path.",
+    )
+
+    parity = sub.add_parser(
+        "parity-check",
+        help="Compare two outputs directories for yields/hist parity.",
+    )
+    parity.add_argument("--baseline", required=True)
+    parity.add_argument("--candidate", required=True)
+    parity.add_argument("--abs-tol", type=float, default=1e-6)
+    parity.add_argument("--rel-tol", type=float, default=1e-3)
+    parity.add_argument("--out", default=None)
+    parity.add_argument("--fail-on-mismatch", action="store_true")
 
     return parser
 
@@ -724,6 +869,9 @@ def main() -> None:
 
     if args.command == "run":
         run_pipeline(args)
+        return
+    if args.command == "parity-check":
+        _run_parity_check_command(args)
         return
 
     parser.print_help()

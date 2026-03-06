@@ -266,6 +266,36 @@ python -m analysis.cli run \
   --max-events 50000
 ```
 
+Optional runtime backend selection (additive, non-replacing):
+```bash
+python -m analysis.cli run \
+  --summary analysis/ATLAS_2012_H_to_gammagamma_discovery.analysis.json \
+  --categories analysis/categories.yaml \
+  --inputs input-data \
+  --outputs outputs_auto \
+  --event-backend auto
+```
+
+Optional PyHF implementation selection (additive, non-replacing):
+```bash
+python -m analysis.cli run \
+  --summary analysis/ATLAS_2012_H_to_gammagamma_discovery.analysis.json \
+  --categories analysis/categories.yaml \
+  --inputs input-data \
+  --outputs outputs_pyhf_auto \
+  --fit-backend pyhf \
+  --pyhf-backend auto
+```
+
+Parity check between two output directories (native vs rootmltool/auto):
+```bash
+python -m analysis.cli parity-check \
+  --baseline outputs_native \
+  --candidate outputs_auto \
+  --out outputs_auto/report/parity_native_vs_auto.json \
+  --fail-on-mismatch
+```
+
 ## For Agents (Automation Playbook)
 
 Recommended agent behavior:

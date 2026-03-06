@@ -9,6 +9,7 @@ Core policy requirements:
 - Treat signal and background modeling choices as explicit methodological choices.
 - For the default Run-2 H->gammagamma workflow in this repository, central MC normalization must use `lumi_fb = 36.1`.
 - For H->gammagamma resonance analyses in this repository, use `pyroot_roofit` as the mandatory primary backend for mass fits and significance; non-ROOT backends may be used only as explicitly labeled cross-checks.
+- Never replace existing workflow implementations when adding tools from other projects; keep new tools as additive, selectable options.
 - Enforce blinding where required by the analysis strategy.
 - Require visual and statistical validation before declaring completion.
 - Use the term **cut flow** consistently.
@@ -136,3 +137,5 @@ Core pipeline skills:
 Verification skills:
 - `13_VISUAL_VERIFICATION.md`
 - `24_HISTOGRAM_PLOTTING_INVARIANTS.md`
+- `25_ROOTMLTOOL_CACHED_ANALYSIS.md`
+- `26_STATTOOL_OPTIONAL_PYHF_BACKEND.md`

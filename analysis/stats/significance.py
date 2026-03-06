@@ -71,10 +71,17 @@ def _compute_discovery_significance_pyhf(workspace_path: Path) -> Dict[str, Any]
         }
 
 
-def compute_discovery_significance(workspace_path: Path, backend: str = "pyhf") -> Dict[str, Any]:
+def compute_discovery_significance(
+    workspace_path: Path,
+    backend: str = "pyhf",
+    pyhf_backend: str = "native",
+) -> Dict[str, Any]:
     backend_name = str(backend).strip().lower()
     if backend_name == "pyhf":
-        return _compute_discovery_significance_pyhf(workspace_path)
+        payload = _compute_discovery_significance_pyhf(workspace_path)
+        payload["pyhf_backend_requested"] = str(pyhf_backend)
+        payload["pyhf_backend_used"] = "native"
+        return payload
     if backend_name == "pyroot_roofit":
         return run_roofit_significance(workspace_path)
     return {
@@ -87,6 +94,8 @@ def compute_discovery_significance(workspace_path: Path, backend: str = "pyhf") 
         "q0": None,
         "z_discovery": None,
         "backend": backend_name,
+        "pyhf_backend_requested": str(pyhf_backend),
+        "pyhf_backend_used": None,
     }
 
 
@@ -99,6 +108,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--fit-id", required=True)
     parser.add_argument("--out", required=True)
     parser.add_argument("--backend", default="pyhf", choices=["pyhf", "pyroot_roofit"])
+    parser.add_argument(
+        "--pyhf-backend",
+        default="native",
+        choices=["native", "stattool", "auto"],
+        help="Requested PyHF implementation backend (significance currently uses native path).",
+    )
     return parser
 
 
@@ -107,7 +122,11 @@ def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
 
-    payload = compute_discovery_significance(Path(args.workspace), backend=args.backend)
+    payload = compute_discovery_significance(
+        Path(args.workspace),
+        backend=args.backend,
+        pyhf_backend=args.pyhf_backend,
+    )
     payload["fit_id"] = args.fit_id
 
     out_path = Path(args.out)

@@ -17,6 +17,7 @@ def test_cli_parser_has_run():
     args = parser.parse_args(["run", "--summary", "a.json", "--inputs", "in", "--outputs", "out"])
     assert args.command == "run"
     assert args.fit_backend == "pyroot_roofit"
+    assert args.pyhf_backend == "native"
 
 
 def test_summary_validation_structure():
