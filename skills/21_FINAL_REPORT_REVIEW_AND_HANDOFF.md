@@ -12,6 +12,8 @@ Policy requirements:
 - separate hard failures from warnings
 - ensure continuation-critical metadata and artifact paths are explicitly documented
 - preserve blinding policy when reviewing statistical/plot outputs
+- enforce post-run skill extraction as a completion gate; missing extraction summary is a handoff blocker
+- enforce data-MC discrepancy artifact completion as a gate; missing discrepancy artifacts are handoff blockers
 
 ## Layer 2 — Workflow Contract
 ### Inputs
@@ -21,6 +23,9 @@ Policy requirements:
 - fit/significance artifacts
 - run configuration files
 - workflow execution logs/manifests
+- `outputs/report/skill_extraction_summary.json`
+- `outputs/report/data_mc_discrepancy_audit.json`
+- `outputs/report/data_mc_check_log.json`
 
 ### Review Steps
 1. Completeness check:
@@ -70,6 +75,19 @@ Policy requirements:
      - statistical model and backend
      - exact output artifact locations
    - flag missing continuation-critical information
+7. Skill-extraction completion gate:
+   - verify `outputs/report/skill_extraction_summary.json` exists and is readable
+   - verify summary `status` is either `none_found` or `candidates_created`
+   - if `candidates_created`, verify listed `candidate_skills/*` files exist
+   - if this gate fails, classify run status as `partially completed` or `major failure` (not handoff-ready)
+8. Data-MC discrepancy completion gate:
+   - verify `outputs/report/data_mc_discrepancy_audit.json` exists and is readable
+   - verify discrepancy-audit `status` is one of:
+     - `no_substantial_discrepancy`
+     - `discrepancy_investigated_bug_found`
+     - `discrepancy_investigated_no_bug_found`
+   - verify `outputs/report/data_mc_check_log.json` exists and is readable
+   - if this gate fails, classify run status as `partially completed` or `major failure` (not handoff-ready)
 
 ### Required Output
 Produce a structured review summary containing:
@@ -77,6 +95,8 @@ Produce a structured review summary containing:
 - detected anomalies
 - issues requiring human attention
 - handoff-readiness statement (sufficient/insufficient for continuation)
+- skill-extraction gate result and any blocking gaps
+- data-MC discrepancy gate result and any blocking gaps
 
 ## Layer 3 — Example Implementation
 ### Recommended Output Artifact
@@ -88,6 +108,10 @@ Produce a structured review summary containing:
   - `handoff_ready` (bool)
   - `handoff_gaps` (list)
   - `checked_artifacts` (paths)
+  - `skill_extraction_checked` (bool)
+  - `skill_extraction_status` (`none_found`, `candidates_created`, or `missing`)
+  - `data_mc_discrepancy_checked` (bool)
+  - `data_mc_discrepancy_status` (`no_substantial_discrepancy`, `discrepancy_investigated_bug_found`, `discrepancy_investigated_no_bug_found`, or `missing`)
 
 ### Minimum Human Summary
 - one concise run-status paragraph

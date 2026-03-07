@@ -28,6 +28,9 @@ Policy requirements:
 - artifact-link inventory enabling traceability from report statements to produced artifacts
 - category-resolved mass-plot artifact set with stacked signal overlays and explicit blinding behavior
 - plot-caption artifact content in the report markdown (caption text adjacent to each embedded image)
+- discrepancy artifacts for data-MC checks:
+  - `outputs/report/data_mc_discrepancy_audit.json`
+  - `outputs/report/data_mc_check_log.json`
 
 ### Acceptance Checks
 - at least one observable plot exists for each fit region
@@ -39,6 +42,8 @@ Policy requirements:
 - report uses inline markdown image tags (for example `![](plots/<name>.png)`) for produced plots
 - when category-resolved resonance plots are produced, there is one plot per active category and blinded windows hide data points unless unblinded
 - every embedded image in report markdown is immediately accompanied by a caption that explains entries and motivation
+- substantial data-MC discrepancies are explicitly called out and not hidden by cosmetic-only changes
+- discrepancy artifacts exist even when no substantial discrepancy is found
 
 ## Layer 3 — Example Implementation
 ### Report Inputs (Current Repository)
@@ -58,3 +63,4 @@ Policy requirements:
 Use:
 - `17_CONTROL_REGION_SIGNAL_REGION_BLINDING_AND_VISUALIZATION.md`
 - `19_FINAL_ANALYSIS_REPORT_AGENT_WORKFLOW.md`
+- `28_DATA_MC_DISCREPANCY_SANITY_CHECK.md`

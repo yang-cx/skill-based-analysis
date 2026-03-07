@@ -8,7 +8,9 @@ Governance requirements:
 - newly proposed skills must be written in `candidate_skills/`
 - files in `candidate_skills/` are not active skills
 - do not move/promote candidate skills into `skills/` without explicit human approval
-- run this step only after task completion and final report generation
+- run this step after task completion and final report generation
+- run this step for every completed production run (mandatory default)
+- always emit `outputs/report/skill_extraction_summary.json`, including zero-candidate runs
 
 Operational requirements:
 - use only observable run artifacts (reports, logs, warnings/errors, patches, workflow notes, outputs)
@@ -66,10 +68,10 @@ Explicitly state:
 - candidate skills require human approval before promotion into `skills/`
 
 ## Layer 3 — Example Implementation
-### Recommended Artifacts
+### Required Artifacts
 - candidate skill files:
   - `candidate_skills/<candidate_name>.md`
-- optional run-level extraction summary:
+- run-level extraction summary:
   - `outputs/report/skill_extraction_summary.json`
 
 Suggested `skill_extraction_summary.json` fields:
@@ -83,6 +85,7 @@ Suggested `skill_extraction_summary.json` fields:
 - invoke after:
   1. analysis execution is complete
   2. final report has been generated
+  3. final handoff/review is being prepared (completion gate)
 
 ### Related Skills
 - `21_FINAL_REPORT_REVIEW_AND_HANDOFF.md`

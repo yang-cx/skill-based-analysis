@@ -31,6 +31,7 @@ Policy requirements:
   - expected signal stacked on top of background
 - when reporting category-combined significance, explicitly state that the combined likelihood uses category-specific background parameters and a shared signal-strength parameter across categories
 - every plot embedded in the final report must include a caption that explains plot entries and gives motivation/justification for why the plot is part of the evidence chain
+- run-level skill extraction must be executed after report generation, and the report/handoff record must reference `outputs/report/skill_extraction_summary.json`
 
 Normalization relation to state in report:
 - `norm_factor = (sigma_pb * k_factor * filter_eff * lumi_pb) / sumw`
@@ -62,6 +63,10 @@ Normalization relation to state in report:
 - category mass-window yield-table artifact (expected signal/background per category at `125 +/- 2 GeV`)
 - per-category diphoton mass-plot artifact set with stacked signal-over-background expectation
 - agent-decision audit artifact in Appendix A with issue, decision, and justification for each deviation
+- data-MC discrepancy artifacts:
+  - `outputs/report/data_mc_discrepancy_audit.json`
+  - `outputs/report/data_mc_check_log.json`
+- post-run skill-extraction summary artifact at `outputs/report/skill_extraction_summary.json` (required even when no candidates are proposed)
 
 ### Acceptance Checks
 - section headers exist and appear in required order
@@ -84,6 +89,8 @@ Normalization relation to state in report:
 - when Asimov discovery sensitivity is reported, the report explicitly documents `mu_gen = 0` background-only generation and full-range evaluation including the signal region
 - statistical interpretation section states the backend used for the reported fit/significance numbers and confirms `pyroot_roofit` is primary for H->gammagamma
 - Appendix A exists and contains at least one structured entry whenever substitutions/deviations occurred
+- report (or linked handoff note) references data-MC discrepancy status from `outputs/report/data_mc_discrepancy_audit.json`
+- report (or linked handoff note) references `outputs/report/skill_extraction_summary.json` with its status (`none_found` or `candidates_created`)
 
 ## Layer 3 — Example Implementation
 ### Output Location (Current Repository Workflow)
@@ -102,6 +109,7 @@ Normalization relation to state in report:
 - `17_CONTROL_REGION_SIGNAL_REGION_BLINDING_AND_VISUALIZATION.md`
 - `14_PROFILE_LIKELIHOOD_SIGNIFICANCE.md`
 - `21_FINAL_REPORT_REVIEW_AND_HANDOFF.md`
+- `23_EXTRACT_NEW_SKILL_FROM_FAILURE.md`
 
 ### Example Generation Path (Current Repository Workflow)
 - generate a baseline report from pipeline report stage

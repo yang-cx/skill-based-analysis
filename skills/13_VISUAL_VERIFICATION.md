@@ -10,6 +10,7 @@ Policy requirements:
 - validate category behavior when categories are used
 - validate final fit quality and residual structure
 - validate control/non-signal region agreement in both pre-fit and post-fit views
+- explicitly flag substantial data-MC discrepancies and trigger discrepancy checks instead of cosmetic retuning
 - in blinded mode, verify that non-signal plots show data while signal-region plots hide data
 - apply clear plotting conventions: physical axis labels, uncertainty display where available, consistent binning, appropriate scaling, no misleading smoothing
 - when verification plots are embedded in reports, each plot should include a caption explaining plotted entries and why this diagnostic is required
@@ -23,6 +24,9 @@ Policy requirements:
 - final-result plot artifacts including fitted mass spectrum and pull/residual distribution
 - pre-fit and post-fit non-signal-region comparison plot artifacts
 - verification-status artifact that records presence/absence of required diagnostics
+- data-MC discrepancy artifacts:
+  - `outputs/report/data_mc_discrepancy_audit.json`
+  - `outputs/report/data_mc_check_log.json`
 
 ### Acceptance Checks
 - all required object-level diagnostics exist
@@ -34,6 +38,8 @@ Policy requirements:
 - blinding behavior matches policy: data shown in non-signal regions, hidden in signal regions unless explicitly unblinded
 - verification stage fails if any required diagnostic artifact is missing
 - reporting-stage integration should fail if required verification plots are embedded without explanatory captions
+- substantial discrepancies must be logged to discrepancy-audit artifacts or explicitly stated as absent
+- discrepancy artifacts must exist even when no substantial discrepancy is found
 
 ## Layer 3 — Example Implementation
 ### Required Plot Names (Current Repository)
@@ -57,3 +63,4 @@ Policy requirements:
 ### Blinding Coordination
 If blinded operation is active, also apply:
 - `17_CONTROL_REGION_SIGNAL_REGION_BLINDING_AND_VISUALIZATION.md`
+- `28_DATA_MC_DISCREPANCY_SANITY_CHECK.md`
