@@ -1,0 +1,57 @@
+categories:
+  cat_2jet:
+    description: "VBF-enriched 2-jet category"
+    assignment_basis: topology_selection
+    assignment_definition: "region_id == SR_2JET"
+    coverage: full
+    regions:
+      - SR_2JET
+
+  cat_central_low_ptt:
+    description: "Central low-pTt category (open-data 6-cat scheme)"
+    assignment_basis: topology_selection
+    assignment_definition: "region_id == SR_CENTRAL_LOW_PTT"
+    coverage: full
+    regions:
+      - SR_CENTRAL_LOW_PTT
+
+  cat_central_high_ptt:
+    description: "Central high-pTt category (open-data 6-cat scheme)"
+    assignment_basis: topology_selection
+    assignment_definition: "region_id == SR_CENTRAL_HIGH_PTT"
+    coverage: full
+    regions:
+      - SR_CENTRAL_HIGH_PTT
+
+  cat_rest_low_ptt:
+    description: "Rest low-pTt category (open-data 6-cat scheme)"
+    assignment_basis: topology_selection
+    assignment_definition: "region_id == SR_REST_LOW_PTT"
+    coverage: full
+    regions:
+      - SR_REST_LOW_PTT
+
+  cat_rest_high_ptt:
+    description: "Rest high-pTt category (open-data 6-cat scheme)"
+    assignment_basis: topology_selection
+    assignment_definition: "region_id == SR_REST_HIGH_PTT"
+    coverage: full
+    regions:
+      - SR_REST_HIGH_PTT
+
+  cat_transition:
+    description: "Transition region category (open-data 6-cat scheme)"
+    assignment_basis: topology_selection
+    assignment_definition: "region_id == SR_TRANSITION"
+    coverage: full
+    regions:
+      - SR_TRANSITION
+
+  cat_monitoring:
+    description: "Inclusive monitoring category"
+    assignment_basis: inclusive
+    assignment_definition: "all diphoton events"
+    coverage: full
+    regions:
+      - SR_DIPHOTON_INCL
+      - CR_BKG_SHAPE_CHECKS

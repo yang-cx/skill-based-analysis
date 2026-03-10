@@ -1,0 +1,134 @@
+regions:
+  - region_id: SR_DIPHOTON_INCL
+    kind: signal
+    label: "Inclusive diphoton monitoring SR"
+    description: >
+      Inclusive diphoton baseline: >=2 tight photons, lead ET>40 GeV,
+      sublead ET>30 GeV, |eta|<2.37 excl. 1.37-1.52, 105<mgg<160 GeV.
+    selection:
+      n_photons_tight: 2
+      lead_pt_gev: 40.0
+      sublead_pt_gev: 30.0
+      eta_max: 2.37
+      eta_crack_low: 1.37
+      eta_crack_high: 1.52
+      mgg_low_gev: 105.0
+      mgg_high_gev: 160.0
+    blind: true
+    cutflow_steps:
+      - ">=2 tight photons"
+      - "lead pT > 40 GeV"
+      - "sublead pT > 30 GeV"
+      - "105 < m_gg < 160 GeV"
+
+  - region_id: CR_BKG_SHAPE_CHECKS
+    kind: control
+    label: "Diphoton sideband control region"
+    description: >
+      Sideband control region for background shape cross-checks.
+      Same as SR_DIPHOTON_INCL but excluding the 120-130 GeV signal window.
+    selection:
+      base: SR_DIPHOTON_INCL
+      sideband_only: true
+      blind_low_gev: 120.0
+      blind_high_gev: 130.0
+    blind: false
+    cutflow_steps:
+      - "diphoton baseline"
+      - "fit-range acceptance"
+      - "sideband only"
+
+  - region_id: SR_2JET
+    kind: signal
+    label: "VBF-enriched 2-jet category"
+    description: >
+      VBF-enriched topology: >=2 jets (pT>25 GeV, |eta|<4.5), JVF>=0.75 for central jets,
+      delta_eta_jj>2.8, m_jj>400 GeV, delta_phi(gg,jj)>2.6.
+      Requires diphoton baseline.
+    selection:
+      base: SR_DIPHOTON_INCL
+      n_jets_min: 2
+      jet_pt_gev: 25.0
+      jet_eta_max: 4.5
+      jvf_min: 0.75
+      jvf_eta_max: 2.5
+      delta_eta_jj_min: 2.8
+      m_jj_min_gev: 400.0
+      delta_phi_gg_jj_min: 2.6
+    blind: true
+    cutflow_steps:
+      - "diphoton baseline"
+      - ">=2 selected jets"
+      - "delta_eta_jj > 2.8"
+      - "m_jj > 400 GeV"
+      - "delta_phi(gg,jj) > 2.6"
+
+  - region_id: SR_CENTRAL_LOW_PTT
+    kind: signal
+    label: "Central low-pTt category"
+    description: >
+      Both photons central (|eta|<0.75), not in transition region, not VBF 2-jet,
+      pTt < 60 GeV. Open-data substitution for unconv+conv central split
+      (no conversion status available in ATLAS Open Data).
+    selection:
+      base: SR_DIPHOTON_INCL
+      category: central_low_ptt
+      ptt_max_gev: 60.0
+    blind: true
+    cutflow_steps:
+      - "selection"
+
+  - region_id: SR_CENTRAL_HIGH_PTT
+    kind: signal
+    label: "Central high-pTt category"
+    description: >
+      Both photons central (|eta|<0.75), not in transition region, not VBF 2-jet,
+      pTt >= 60 GeV.
+    selection:
+      base: SR_DIPHOTON_INCL
+      category: central_high_ptt
+      ptt_min_gev: 60.0
+    blind: true
+    cutflow_steps:
+      - "selection"
+
+  - region_id: SR_REST_LOW_PTT
+    kind: signal
+    label: "Rest low-pTt category"
+    description: >
+      Not both central (|eta|<0.75), not transition, not VBF 2-jet, pTt < 60 GeV.
+      Covers outer barrel and endcap photons.
+    selection:
+      base: SR_DIPHOTON_INCL
+      category: rest_low_ptt
+      ptt_max_gev: 60.0
+    blind: true
+    cutflow_steps:
+      - "selection"
+
+  - region_id: SR_REST_HIGH_PTT
+    kind: signal
+    label: "Rest high-pTt category"
+    description: >
+      Not both central, not transition, not VBF 2-jet, pTt >= 60 GeV.
+    selection:
+      base: SR_DIPHOTON_INCL
+      category: rest_high_ptt
+      ptt_min_gev: 60.0
+    blind: true
+    cutflow_steps:
+      - "selection"
+
+  - region_id: SR_TRANSITION
+    kind: signal
+    label: "Transition region category"
+    description: >
+      At least one photon in transition region 1.3 < |eta| < 1.75.
+      No pTt split. Dedicated category for poorer-resolution transition region.
+      Not VBF 2-jet.
+    selection:
+      base: SR_DIPHOTON_INCL
+      category: transition
+    blind: true
+    cutflow_steps:
+      - "selection"
