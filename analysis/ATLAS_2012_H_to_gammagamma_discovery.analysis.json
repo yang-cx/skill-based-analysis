@@ -1,0 +1,300 @@
+{
+  "analysis_metadata": {
+    "experiment": "ATLAS",
+    "paper_title": "Observation of a New Particle in the Search for the Standard Model Higgs Boson with the ATLAS Detector at the LHC",
+    "arxiv_id": "1207.7214",
+    "publication_year": 2012,
+    "analysis_name": "H_to_gammagamma_discovery",
+    "energy": "pp collisions at √s = 7 TeV (2011) and √s = 8 TeV (2012)",
+    "luminosity": "4.8 fb−1 at 7 TeV; 5.8–5.9 fb−1 at 8 TeV",
+    "notes": "Diphoton channel as described in Section 5 of arXiv:1207.7214v2."
+  },
+  "analysis_objectives": [
+    {
+      "objective_id": "OBJ1",
+      "type": "search",
+      "target_process": "SM Higgs boson production with H→γγ",
+      "parameter_of_interest": [
+        "signal_strength_mu",
+        "mH"
+      ],
+      "description": "Search for a narrow resonance in the diphoton invariant-mass spectrum using categorized unbinned likelihood fits to mγγ.",
+      "special_considerations": "Analysis uses ten categories across 7 TeV and 8 TeV datasets; background is modeled from data with category-specific functional forms and a bias-constraint term."
+    }
+  ],
+  "signal_signatures": [
+    {
+      "signature_id": "SIG1",
+      "signal_process": "pp→H (ggF/VBF/VH/ttH) with H→γγ",
+      "decay_chain": "H→γγ",
+      "final_state_objects": [
+        "photon",
+        "photon",
+        "optional_jets(VBF_category)"
+      ],
+      "analysis_channels": [
+        "unconverted_central_low_pTt",
+        "unconverted_central_high_pTt",
+        "unconverted_rest_low_pTt",
+        "unconverted_rest_high_pTt",
+        "converted_central_low_pTt",
+        "converted_central_high_pTt",
+        "converted_rest_low_pTt",
+        "converted_rest_high_pTt",
+        "converted_transition",
+        "two_jet_VBF_enriched"
+      ],
+      "key_observables": [
+        "m_gammagamma",
+        "pTt",
+        "jet_kinematics_for_2jet_category"
+      ],
+      "event_topology_description": "Two isolated photon candidates in the electromagnetic calorimeter; events are categorized by photon conversion status, photon η regions, pTt (orthogonal component of diphoton pT), and a VBF-enriched 2-jet topology.",
+      "special_considerations": "About 70% of signal events in the 2-jet category come from VBF."
+    }
+  ],
+  "background_processes": [
+    {
+      "background_id": "BKG1",
+      "process_name": "prompt SM diphoton production (γγ)",
+      "category": "irreducible",
+      "estimation_method": "data_driven",
+      "special_treatment": "Modeled by fitting the mγγ spectrum in each category with an analytic function (category-dependent).",
+      "notes": "Dominant background."
+    },
+    {
+      "background_id": "BKG2",
+      "process_name": "γ+jet with jet misidentified as photon (γj)",
+      "category": "reducible",
+      "estimation_method": "data_driven",
+      "special_treatment": "Included effectively in the fitted background model per category.",
+      "notes": "Mentioned as contributing background in H→γγ channel."
+    },
+    {
+      "background_id": "BKG3",
+      "process_name": "jet+jet with one/two jets misidentified as photons (jj)",
+      "category": "reducible",
+      "estimation_method": "data_driven",
+      "special_treatment": "Included effectively in the fitted background model per category.",
+      "notes": "Mentioned as contributing background in H→γγ channel."
+    },
+    {
+      "background_id": "BKG4",
+      "process_name": "Drell–Yan process",
+      "category": "reducible",
+      "estimation_method": "data_driven",
+      "special_treatment": "Included effectively in the fitted background model per category.",
+      "notes": "Mentioned as a background source."
+    }
+  ],
+  "signal_regions": [
+    {
+      "signal_region_id": "SR_2JET",
+      "associated_signature_ids": [
+        "SIG1"
+      ],
+      "selection_summary": "VBF-enriched 2-jet category: require ≥2 jets with |η|<4.5 and pT>25 GeV (pT>30 GeV for jets with 2.5<|η|<4.5 in 8 TeV analysis). For jets with |η|<2.5 require jet vertex fraction (JVF) ≥0.75. Additional VBF-motivated cuts: Δη(j1,j2)>2.8, mjj>400 GeV, and Δφ(γγ system, dijet system)>2.6.",
+      "fit_observable": "m_gammagamma",
+      "binning": "unbinned",
+      "optimization_strategy": "Topology-based categorization to enhance VBF sensitivity.",
+      "purpose": "Enhance sensitivity to VBF production; ~70% of signal in this category from VBF.",
+      "special_considerations": "not_specified"
+    },
+    {
+      "signal_region_id": "SR_UNCONV_CENTRAL_LOW_PTT",
+      "associated_signature_ids": [
+        "SIG1"
+      ],
+      "selection_summary": "Two unconverted photons; both photons central (|η|<0.75); pTt<60 GeV. Baseline photon selection: photons in |η|<2.37 excluding 1.37≤|η|<1.52; leading ET>40 GeV, subleading ET>30 GeV; selected with diphoton trigger.",
+      "fit_observable": "m_gammagamma",
+      "binning": "unbinned",
+      "optimization_strategy": "Categorize by conversion/η/pTt to exploit differing mass resolution and S/B.",
+      "purpose": "High mass resolution and S/B category for resonance search.",
+      "special_considerations": "Photon ID uses NN-based selection for 7 TeV and cut-based selection for 8 TeV."
+    },
+    {
+      "signal_region_id": "SR_UNCONV_CENTRAL_HIGH_PTT",
+      "associated_signature_ids": [
+        "SIG1"
+      ],
+      "selection_summary": "Two unconverted photons; both |η|<0.75; pTt≥60 GeV; baseline photon selection as above.",
+      "fit_observable": "m_gammagamma",
+      "binning": "unbinned",
+      "optimization_strategy": "High pTt targets VBF/VH/ttH-enriched events with higher pTt.",
+      "purpose": "Improve sensitivity by separating higher pTt signal-like events.",
+      "special_considerations": "not_specified"
+    },
+    {
+      "signal_region_id": "SR_UNCONV_REST_LOW_PTT",
+      "associated_signature_ids": [
+        "SIG1"
+      ],
+      "selection_summary": "Two unconverted photons; not both in |η|<0.75 (unconverted rest); pTt<60 GeV; baseline photon selection as above.",
+      "fit_observable": "m_gammagamma",
+      "binning": "unbinned",
+      "optimization_strategy": "not_specified",
+      "purpose": "Categorized resonance search.",
+      "special_considerations": "not_specified"
+    },
+    {
+      "signal_region_id": "SR_UNCONV_REST_HIGH_PTT",
+      "associated_signature_ids": [
+        "SIG1"
+      ],
+      "selection_summary": "Two unconverted photons; unconverted rest; pTt≥60 GeV; baseline photon selection as above.",
+      "fit_observable": "m_gammagamma",
+      "binning": "unbinned",
+      "optimization_strategy": "not_specified",
+      "purpose": "Categorized resonance search.",
+      "special_considerations": "not_specified"
+    },
+    {
+      "signal_region_id": "SR_CONV_CENTRAL_LOW_PTT",
+      "associated_signature_ids": [
+        "SIG1"
+      ],
+      "selection_summary": "At least one converted photon; both photons central (|η|<0.75); pTt<60 GeV; baseline photon selection as above.",
+      "fit_observable": "m_gammagamma",
+      "binning": "unbinned",
+      "optimization_strategy": "not_specified",
+      "purpose": "Categorized resonance search.",
+      "special_considerations": "Converted photons can have one or two tracks matched to the calorimeter cluster."
+    },
+    {
+      "signal_region_id": "SR_CONV_CENTRAL_HIGH_PTT",
+      "associated_signature_ids": [
+        "SIG1"
+      ],
+      "selection_summary": "At least one converted photon; both |η|<0.75; pTt≥60 GeV; baseline photon selection as above.",
+      "fit_observable": "m_gammagamma",
+      "binning": "unbinned",
+      "optimization_strategy": "not_specified",
+      "purpose": "Categorized resonance search.",
+      "special_considerations": "not_specified"
+    },
+    {
+      "signal_region_id": "SR_CONV_REST_LOW_PTT",
+      "associated_signature_ids": [
+        "SIG1"
+      ],
+      "selection_summary": "At least one converted photon; converted rest (all other events not in converted central or converted transition); pTt<60 GeV; baseline photon selection as above.",
+      "fit_observable": "m_gammagamma",
+      "binning": "unbinned",
+      "optimization_strategy": "not_specified",
+      "purpose": "Categorized resonance search.",
+      "special_considerations": "not_specified"
+    },
+    {
+      "signal_region_id": "SR_CONV_REST_HIGH_PTT",
+      "associated_signature_ids": [
+        "SIG1"
+      ],
+      "selection_summary": "At least one converted photon; converted rest; pTt≥60 GeV; baseline photon selection as above.",
+      "fit_observable": "m_gammagamma",
+      "binning": "unbinned",
+      "optimization_strategy": "not_specified",
+      "purpose": "Categorized resonance search.",
+      "special_considerations": "not_specified"
+    },
+    {
+      "signal_region_id": "SR_CONV_TRANSITION",
+      "associated_signature_ids": [
+        "SIG1"
+      ],
+      "selection_summary": "At least one converted photon with 1.3<|η|<1.75 (converted transition category); no pTt split; baseline photon selection as above.",
+      "fit_observable": "m_gammagamma",
+      "binning": "unbinned",
+      "optimization_strategy": "Dedicated category for poorer resolution transition-region events.",
+      "purpose": "Maintain sensitivity while accounting for differing resolution/background in transition η region.",
+      "special_considerations": "not_specified"
+    }
+  ],
+  "control_regions": [
+    {
+      "control_region_id": "CR_BKG_SHAPE_CHECKS",
+      "target_backgrounds": [
+        "BKG1",
+        "BKG2",
+        "BKG3",
+        "BKG4"
+      ],
+      "selection_summary": "Control regions used to cross-check simulated background shapes with data (details not specified).",
+      "fit_observable": "m_gammagamma",
+      "role_in_fit": "validation",
+      "justification": "Background shapes in simulation were cross-checked using data from control regions as part of bias studies for background parameterizations.",
+      "special_considerations": "not_specified"
+    }
+  ],
+  "fit_setup": [
+    {
+      "fit_id": "FIT1",
+      "fit_purpose": "Extract signal strength and evaluate excess significance in H→γγ using categorized mγγ spectra.",
+      "regions_included": [
+        "SR_2JET",
+        "SR_UNCONV_CENTRAL_LOW_PTT",
+        "SR_UNCONV_CENTRAL_HIGH_PTT",
+        "SR_UNCONV_REST_LOW_PTT",
+        "SR_UNCONV_REST_HIGH_PTT",
+        "SR_CONV_CENTRAL_LOW_PTT",
+        "SR_CONV_CENTRAL_HIGH_PTT",
+        "SR_CONV_REST_LOW_PTT",
+        "SR_CONV_REST_HIGH_PTT",
+        "SR_CONV_TRANSITION"
+      ],
+      "parameters_of_interest": [
+        "signal_strength_mu",
+        "mH"
+      ],
+      "nuisance_parameter_types": [
+        "experimental",
+        "theoretical",
+        "background_normalization"
+      ],
+      "fit_strategy": "simultaneous",
+      "differences_between_fit_versions": "Unbinned likelihood constructed from ten categories for each of the 7 TeV and 8 TeV samples; background parameterizations differ by category.",
+      "special_considerations": "Signal model per category is Crystal Ball + Gaussian tails; background modeled from data in 100–160 GeV window with bias constraint term treated as systematic."
+    }
+  ],
+  "results": [
+    {
+      "result_id": "RES1",
+      "associated_fit_id": "FIT1",
+      "result_type": "measurement",
+      "parameter_reported": "mH",
+      "numerical_result": "126.0 ± 0.4 (stat) ± 0.4 (sys) GeV (from high-resolution channels including H→γγ and H→ZZ→4ℓ)",
+      "confidence_level": "not_specified",
+      "dominant_uncertainties": "Photon/electron energy scale and resolution systematics contribute to overall mass and significance uncertainties.",
+      "notes": "Mass quoted for the observed new particle in the combined analysis; channel-specific mass not specified in extracted text."
+    }
+  ],
+  "analysis_design_insights": [
+    {
+      "design_feature": "Categorization by photon conversion, η region, and pTt",
+      "description": "Events are split into nine non-2jet categories based on converted/unconverted photons, central/rest/transition η regions, and a pTt split at 60 GeV (except converted transition).",
+      "reason_for_use": "Improve sensitivity by exploiting differences in mass resolution and signal-to-background, and by enriching VBF/VH/ttH-like kinematics in high-pTt categories.",
+      "special_considerations": "pTt is defined as the component of the diphoton pT orthogonal to the axis defined by the difference of the two photon momenta."
+    },
+    {
+      "design_feature": "VBF-enriched 2-jet category",
+      "description": "Dedicated 2-jet selection with VBF topology cuts (Δηjj, mjj, Δφ(γγ, jj)).",
+      "reason_for_use": "Enhance sensitivity to VBF production; ~70% of signal in this category from VBF.",
+      "special_considerations": "Includes pile-up mitigation via JVF requirement."
+    },
+    {
+      "design_feature": "Data-driven background modeling with bias constraint",
+      "description": "Background in each category is fit from data (100–160 GeV) with category-specific analytic functions; potential bias is evaluated using simulated backgrounds and incorporated as a systematic via an added signal-like term in the likelihood.",
+      "reason_for_use": "Control spurious signal from imperfect background functional forms while retaining statistical power.",
+      "special_considerations": "Preselection requires bias <20% of statistical uncertainty on fitted signal yield."
+    }
+  ],
+  "retrieval_features": {
+    "topology_class": "resonance",
+    "main_discriminant_type": "mass",
+    "region_strategy": "categorized",
+    "sensitivity_drivers": {
+      "dominant_signal_feature": "Narrow peak in m_gammagamma with category-dependent mass resolution",
+      "dominant_background_rejection_feature": "Photon ID and isolation; categorization exploiting conversion/η and pTt; VBF dijet topology in 2-jet category",
+      "main_limiting_systematics": "Photon reconstruction/identification efficiency and photon energy resolution/scale; background-model bias uncertainty"
+    }
+  }
+}

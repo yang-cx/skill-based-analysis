@@ -1,0 +1,105 @@
+version: 1
+
+# Category axis for (category, region) partitioning.
+# These categories mirror the reference H->gammagamma topology split, with proxy definitions
+# where legacy conversion-era observables are unavailable in open data.
+categories:
+  - category_id: cat_2jet
+    label: "VBF-enriched 2-jet"
+    assignment_basis: topology_selection
+    assignment_definition: "region_id == SR_2JET"
+    mutually_exclusive: true
+    coverage: full
+    is_default: false
+    priority: 0
+    notes: "Proxy to the reference VBF category using available jet kinematics and JVT."
+
+  - category_id: cat_unconv_central_low_ptt
+    label: "Unconv central low-pTt"
+    assignment_basis: topology_selection
+    assignment_definition: "region_id == SR_UNCONV_CENTRAL_LOW_PTT"
+    mutually_exclusive: true
+    coverage: full
+    is_default: false
+    priority: 1
+    notes: "Conversion status approximated with an isolation-based proxy."
+
+  - category_id: cat_unconv_central_high_ptt
+    label: "Unconv central high-pTt"
+    assignment_basis: topology_selection
+    assignment_definition: "region_id == SR_UNCONV_CENTRAL_HIGH_PTT"
+    mutually_exclusive: true
+    coverage: full
+    is_default: false
+    priority: 2
+    notes: "Conversion status approximated with an isolation-based proxy."
+
+  - category_id: cat_unconv_rest_low_ptt
+    label: "Unconv rest low-pTt"
+    assignment_basis: topology_selection
+    assignment_definition: "region_id == SR_UNCONV_REST_LOW_PTT"
+    mutually_exclusive: true
+    coverage: full
+    is_default: false
+    priority: 3
+    notes: "Conversion status approximated with an isolation-based proxy."
+
+  - category_id: cat_unconv_rest_high_ptt
+    label: "Unconv rest high-pTt"
+    assignment_basis: topology_selection
+    assignment_definition: "region_id == SR_UNCONV_REST_HIGH_PTT"
+    mutually_exclusive: true
+    coverage: full
+    is_default: false
+    priority: 4
+    notes: "Conversion status approximated with an isolation-based proxy."
+
+  - category_id: cat_conv_central_low_ptt
+    label: "Conv central low-pTt"
+    assignment_basis: topology_selection
+    assignment_definition: "region_id == SR_CONV_CENTRAL_LOW_PTT"
+    mutually_exclusive: true
+    coverage: full
+    is_default: false
+    priority: 5
+    notes: "Conversion status approximated with an isolation-based proxy."
+
+  - category_id: cat_conv_central_high_ptt
+    label: "Conv central high-pTt"
+    assignment_basis: topology_selection
+    assignment_definition: "region_id == SR_CONV_CENTRAL_HIGH_PTT"
+    mutually_exclusive: true
+    coverage: full
+    is_default: false
+    priority: 6
+    notes: "Conversion status approximated with an isolation-based proxy."
+
+  - category_id: cat_conv_rest_low_ptt
+    label: "Conv rest low-pTt"
+    assignment_basis: topology_selection
+    assignment_definition: "region_id == SR_CONV_REST_LOW_PTT"
+    mutually_exclusive: true
+    coverage: full
+    is_default: false
+    priority: 7
+    notes: "Conversion status approximated with an isolation-based proxy."
+
+  - category_id: cat_conv_rest_high_ptt
+    label: "Conv rest high-pTt"
+    assignment_basis: topology_selection
+    assignment_definition: "region_id == SR_CONV_REST_HIGH_PTT"
+    mutually_exclusive: true
+    coverage: full
+    is_default: false
+    priority: 8
+    notes: "Conversion status approximated with an isolation-based proxy."
+
+  - category_id: cat_conv_transition
+    label: "Conv transition"
+    assignment_basis: topology_selection
+    assignment_definition: "region_id == SR_CONV_TRANSITION"
+    mutually_exclusive: true
+    coverage: full
+    is_default: false
+    priority: 9
+    notes: "Transition eta category retained with conversion-proxy approximation."

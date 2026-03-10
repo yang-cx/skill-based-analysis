@@ -1,0 +1,227 @@
+version: 2
+
+globals:
+  photons:
+    wp: tight
+    min_pt_gev: 25.0
+    max_abs_eta: 2.37
+    crack_veto: true
+    iso: tight
+
+# Derived columns that must exist before region expressions are evaluated.
+derived_columns:
+  required:
+    - n_photons_tight
+    - lead_photon_pt
+    - sublead_photon_pt
+    - lead_photon_eta
+    - sublead_photon_eta
+    - m_gg
+    - diphoton_ptt
+    - n_jets_vbf
+    - m_jj
+    - delta_eta_jj
+    - delta_phi_gg_jj
+    - has_transition_photon
+    - is_central_photon_pair
+    - conversion_proxy
+    - is_vbf_2jet
+
+regions:
+  # Inclusive monitoring region used for yield and mass-window summaries.
+  - region_id: SR_DIPHOTON_INCL
+    kind: signal
+    label: "Inclusive diphoton monitoring SR"
+    selection: >
+      (n_photons_tight >= 2)
+      and (lead_photon_pt > 40.0)
+      and (sublead_photon_pt > 30.0)
+      and in_range(m_gg, 105.0, 160.0)
+    cutflow_steps:
+      - name: ">=2 tight photons"
+        expr: "n_photons_tight >= 2"
+      - name: "lead pT > 40 GeV"
+        expr: "lead_photon_pt > 40.0"
+      - name: "sublead pT > 30 GeV"
+        expr: "sublead_photon_pt > 30.0"
+      - name: "105 < m_gg < 160 GeV"
+        expr: "in_range(m_gg, 105.0, 160.0)"
+
+  # Sideband control region used for background-shape checks and CR normalization.
+  - region_id: CR_BKG_SHAPE_CHECKS
+    kind: control
+    label: "Diphoton sideband control region"
+    selection: >
+      (n_photons_tight >= 2)
+      and (lead_photon_pt > 40.0)
+      and (sublead_photon_pt > 30.0)
+      and in_range(m_gg, 105.0, 160.0)
+      and ((m_gg < 120.0) or (m_gg > 130.0))
+    cutflow_steps:
+      - name: "diphoton baseline"
+        expr: "(n_photons_tight >= 2) and (lead_photon_pt > 40.0) and (sublead_photon_pt > 30.0)"
+      - name: "fit-range acceptance"
+        expr: "in_range(m_gg, 105.0, 160.0)"
+      - name: "sideband only"
+        expr: "(m_gg < 120.0) or (m_gg > 130.0)"
+
+  - region_id: SR_2JET
+    kind: signal
+    label: "VBF-enriched 2-jet category"
+    selection: >
+      (n_photons_tight >= 2)
+      and (lead_photon_pt > 40.0)
+      and (sublead_photon_pt > 30.0)
+      and in_range(m_gg, 105.0, 160.0)
+      and is_vbf_2jet
+    notes: >
+      Uses available jet observables with JVT-based pileup rejection proxy for the
+      reference VBF-enriched selection.
+    cutflow_steps:
+      - name: "diphoton baseline"
+        expr: "(n_photons_tight >= 2) and (lead_photon_pt > 40.0) and (sublead_photon_pt > 30.0) and in_range(m_gg, 105.0, 160.0)"
+      - name: ">=2 selected jets"
+        expr: "n_jets_vbf >= 2"
+      - name: "delta_eta_jj > 2.8"
+        expr: "delta_eta_jj > 2.8"
+      - name: "m_jj > 400 GeV"
+        expr: "m_jj > 400.0"
+      - name: "delta_phi(gg,jj) > 2.6"
+        expr: "delta_phi_gg_jj > 2.6"
+
+  - region_id: SR_UNCONV_CENTRAL_LOW_PTT
+    kind: signal
+    label: "Unconverted-proxy central low-pTt"
+    selection: >
+      (n_photons_tight >= 2)
+      and (lead_photon_pt > 40.0)
+      and (sublead_photon_pt > 30.0)
+      and in_range(m_gg, 105.0, 160.0)
+      and (not is_vbf_2jet)
+      and (not conversion_proxy)
+      and is_central_photon_pair
+      and (diphoton_ptt < 60.0)
+
+  - region_id: SR_UNCONV_CENTRAL_HIGH_PTT
+    kind: signal
+    label: "Unconverted-proxy central high-pTt"
+    selection: >
+      (n_photons_tight >= 2)
+      and (lead_photon_pt > 40.0)
+      and (sublead_photon_pt > 30.0)
+      and in_range(m_gg, 105.0, 160.0)
+      and (not is_vbf_2jet)
+      and (not conversion_proxy)
+      and is_central_photon_pair
+      and (diphoton_ptt >= 60.0)
+
+  - region_id: SR_UNCONV_REST_LOW_PTT
+    kind: signal
+    label: "Unconverted-proxy rest low-pTt"
+    selection: >
+      (n_photons_tight >= 2)
+      and (lead_photon_pt > 40.0)
+      and (sublead_photon_pt > 30.0)
+      and in_range(m_gg, 105.0, 160.0)
+      and (not is_vbf_2jet)
+      and (not conversion_proxy)
+      and (not is_central_photon_pair)
+      and (diphoton_ptt < 60.0)
+
+  - region_id: SR_UNCONV_REST_HIGH_PTT
+    kind: signal
+    label: "Unconverted-proxy rest high-pTt"
+    selection: >
+      (n_photons_tight >= 2)
+      and (lead_photon_pt > 40.0)
+      and (sublead_photon_pt > 30.0)
+      and in_range(m_gg, 105.0, 160.0)
+      and (not is_vbf_2jet)
+      and (not conversion_proxy)
+      and (not is_central_photon_pair)
+      and (diphoton_ptt >= 60.0)
+
+  - region_id: SR_CONV_CENTRAL_LOW_PTT
+    kind: signal
+    label: "Converted-proxy central low-pTt"
+    selection: >
+      (n_photons_tight >= 2)
+      and (lead_photon_pt > 40.0)
+      and (sublead_photon_pt > 30.0)
+      and in_range(m_gg, 105.0, 160.0)
+      and (not is_vbf_2jet)
+      and conversion_proxy
+      and is_central_photon_pair
+      and (diphoton_ptt < 60.0)
+
+  - region_id: SR_CONV_CENTRAL_HIGH_PTT
+    kind: signal
+    label: "Converted-proxy central high-pTt"
+    selection: >
+      (n_photons_tight >= 2)
+      and (lead_photon_pt > 40.0)
+      and (sublead_photon_pt > 30.0)
+      and in_range(m_gg, 105.0, 160.0)
+      and (not is_vbf_2jet)
+      and conversion_proxy
+      and is_central_photon_pair
+      and (diphoton_ptt >= 60.0)
+
+  - region_id: SR_CONV_REST_LOW_PTT
+    kind: signal
+    label: "Converted-proxy rest low-pTt"
+    selection: >
+      (n_photons_tight >= 2)
+      and (lead_photon_pt > 40.0)
+      and (sublead_photon_pt > 30.0)
+      and in_range(m_gg, 105.0, 160.0)
+      and (not is_vbf_2jet)
+      and conversion_proxy
+      and (not has_transition_photon)
+      and (not is_central_photon_pair)
+      and (diphoton_ptt < 60.0)
+
+  - region_id: SR_CONV_REST_HIGH_PTT
+    kind: signal
+    label: "Converted-proxy rest high-pTt"
+    selection: >
+      (n_photons_tight >= 2)
+      and (lead_photon_pt > 40.0)
+      and (sublead_photon_pt > 30.0)
+      and in_range(m_gg, 105.0, 160.0)
+      and (not is_vbf_2jet)
+      and conversion_proxy
+      and (not has_transition_photon)
+      and (not is_central_photon_pair)
+      and (diphoton_ptt >= 60.0)
+
+  - region_id: SR_CONV_TRANSITION
+    kind: signal
+    label: "Converted-proxy transition category"
+    selection: >
+      (n_photons_tight >= 2)
+      and (lead_photon_pt > 40.0)
+      and (sublead_photon_pt > 30.0)
+      and in_range(m_gg, 105.0, 160.0)
+      and (not is_vbf_2jet)
+      and conversion_proxy
+      and has_transition_photon
+
+fits:
+  - fit_id: FIT_MAIN
+    regions_included:
+      - SR_2JET
+      - SR_UNCONV_CENTRAL_LOW_PTT
+      - SR_UNCONV_CENTRAL_HIGH_PTT
+      - SR_UNCONV_REST_LOW_PTT
+      - SR_UNCONV_REST_HIGH_PTT
+      - SR_CONV_CENTRAL_LOW_PTT
+      - SR_CONV_CENTRAL_HIGH_PTT
+      - SR_CONV_REST_LOW_PTT
+      - SR_CONV_REST_HIGH_PTT
+      - SR_CONV_TRANSITION
+    observable: m_gg
+    binning:
+      type: uniform
+      range: [105.0, 160.0]
+      nbins: 55
