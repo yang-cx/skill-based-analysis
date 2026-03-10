@@ -1,0 +1,4 @@
+interface:
+  display_name: "Extract New Skill from Failure"
+  short_description: "Repo skill: Extract New Skill from Failure"
+  default_prompt: "Use $extract-new-skill-from-failure to apply the repo-specific guidance for Extract New Skill from Failure."

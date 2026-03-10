@@ -1,0 +1,4 @@
+interface:
+  display_name: "Plotting and Report"
+  short_description: "Repo skill: Plotting and Report"
+  default_prompt: "Use $plotting-and-report to apply the repo-specific guidance for Plotting and Report."

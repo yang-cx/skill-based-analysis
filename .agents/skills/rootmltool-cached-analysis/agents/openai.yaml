@@ -1,0 +1,4 @@
+interface:
+  display_name: "RootMLTool Cached Analysis Backend Selection"
+  short_description: "Repo skill: RootMLTool Cached Analysis Backend Selection"
+  default_prompt: "Use $rootmltool-cached-analysis to apply the repo-specific guidance for RootMLTool Cached Analysis Backend Selection."

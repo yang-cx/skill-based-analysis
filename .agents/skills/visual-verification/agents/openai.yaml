@@ -1,0 +1,4 @@
+interface:
+  display_name: "Visualization-Based Verification"
+  short_description: "Repo skill: Visualization-Based Verification"
+  default_prompt: "Use $visual-verification to apply the repo-specific guidance for Visualization-Based Verification."

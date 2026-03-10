@@ -1,0 +1,4 @@
+interface:
+  display_name: "Signal/Background Strategy and CR Constraints"
+  short_description: "Repo skill: Signal/Background Strategy and CR Constraints"
+  default_prompt: "Use $signal-background-strategy-and-cr-constraints to apply the repo-specific guidance for Signal/Background Strategy and CR Constraints."

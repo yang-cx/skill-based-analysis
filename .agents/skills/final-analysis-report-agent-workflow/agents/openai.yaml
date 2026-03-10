@@ -1,0 +1,4 @@
+interface:
+  display_name: "Final Analysis Report (ATLAS Open Data Agent Workflow)"
+  short_description: "Repo skill: Final Analysis Report (ATLAS Open Data Agent Workflo"
+  default_prompt: "Use $final-analysis-report-agent-workflow to apply the repo-specific guidance for Final Analysis Report (ATLAS Open Data Agent Workflow)."

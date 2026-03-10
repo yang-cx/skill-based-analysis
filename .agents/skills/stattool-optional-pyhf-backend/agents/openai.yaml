@@ -1,0 +1,4 @@
+interface:
+  display_name: "StatTool Optional PyHF Backend"
+  short_description: "Repo skill: StatTool Optional PyHF Backend"
+  default_prompt: "Use $stattool-optional-pyhf-backend to apply the repo-specific guidance for StatTool Optional PyHF Backend."

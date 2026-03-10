@@ -1,0 +1,4 @@
+interface:
+  display_name: "Histogramming and Templates"
+  short_description: "Repo skill: Histogramming and Templates"
+  default_prompt: "Use $histogramming-and-templates to apply the repo-specific guidance for Histogramming and Templates."

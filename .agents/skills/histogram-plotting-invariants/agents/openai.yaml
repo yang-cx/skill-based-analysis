@@ -1,0 +1,4 @@
+interface:
+  display_name: "Histogram Plotting Invariants"
+  short_description: "Repo skill: Histogram Plotting Invariants"
+  default_prompt: "Use $histogram-plotting-invariants to apply the repo-specific guidance for Histogram Plotting Invariants."

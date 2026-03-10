@@ -1,0 +1,4 @@
+interface:
+  display_name: "Systematics and Nuisances"
+  short_description: "Repo skill: Systematics and Nuisances"
+  default_prompt: "Use $systematics-and-nuisances to apply the repo-specific guidance for Systematics and Nuisances."

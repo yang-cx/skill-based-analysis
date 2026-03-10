@@ -1,0 +1,4 @@
+interface:
+  display_name: "Event IO and Columnar Model"
+  short_description: "Repo skill: Event IO and Columnar Model"
+  default_prompt: "Use $event-io-and-columnar-model to apply the repo-specific guidance for Event IO and Columnar Model."

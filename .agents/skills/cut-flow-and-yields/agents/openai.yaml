@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cut Flow and Yields"
+  short_description: "Repo skill: Cut Flow and Yields"
+  default_prompt: "Use $cut-flow-and-yields to apply the repo-specific guidance for Cut Flow and Yields."

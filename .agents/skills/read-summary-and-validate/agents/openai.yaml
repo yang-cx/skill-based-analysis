@@ -1,0 +1,4 @@
+interface:
+  display_name: "Read Summary and Validate"
+  short_description: "Repo skill: Read Summary and Validate"
+  default_prompt: "Use $read-summary-and-validate to apply the repo-specific guidance for Read Summary and Validate."

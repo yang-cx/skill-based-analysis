@@ -1,0 +1,4 @@
+interface:
+  display_name: "13 TeV 2025 Data — Beta"
+  short_description: "Repo skill: 13 TeV 2025 Data — Beta"
+  default_prompt: "Use $13tev25-details to apply the repo-specific guidance for 13 TeV 2025 Data — Beta."

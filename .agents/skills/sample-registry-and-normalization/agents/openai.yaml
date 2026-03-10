@@ -1,0 +1,4 @@
+interface:
+  display_name: "Sample Registry and Normalization"
+  short_description: "Repo skill: Sample Registry and Normalization"
+  default_prompt: "Use $sample-registry-and-normalization to apply the repo-specific guidance for Sample Registry and Normalization."

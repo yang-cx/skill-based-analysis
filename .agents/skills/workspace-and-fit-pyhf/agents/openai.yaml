@@ -1,0 +1,4 @@
+interface:
+  display_name: "Workspace and Fit (RooFit-Primary for H->gammagamma)"
+  short_description: "Repo skill: Workspace and Fit (RooFit-Primary for H->gammagamma)"
+  default_prompt: "Use $workspace-and-fit-pyhf to apply the repo-specific guidance for Workspace and Fit (RooFit-Primary for H->gammagamma)."

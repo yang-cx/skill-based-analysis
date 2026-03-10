@@ -1,0 +1,4 @@
+interface:
+  display_name: "Final Report Review and Handoff"
+  short_description: "Repo skill: Final Report Review and Handoff"
+  default_prompt: "Use $final-report-review-and-handoff to apply the repo-specific guidance for Final Report Review and Handoff."

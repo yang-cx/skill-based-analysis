@@ -1,0 +1,4 @@
+interface:
+  display_name: "Control/Signal Region Blinding and Visualization"
+  short_description: "Repo skill: Control/Signal Region Blinding and Visualization"
+  default_prompt: "Use $control-region-signal-region-blinding-and-visualization to apply the repo-specific guidance for Control/Signal Region Blinding and Visualization."

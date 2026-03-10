@@ -1,0 +1,4 @@
+interface:
+  display_name: "Bootstrap Repo"
+  short_description: "Repo skill: Bootstrap Repo"
+  default_prompt: "Use $bootstrap-repo to apply the repo-specific guidance for Bootstrap Repo."

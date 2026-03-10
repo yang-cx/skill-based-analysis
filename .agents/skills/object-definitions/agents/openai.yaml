@@ -1,0 +1,4 @@
+interface:
+  display_name: "Object Definitions"
+  short_description: "Repo skill: Object Definitions"
+  default_prompt: "Use $object-definitions to apply the repo-specific guidance for Object Definitions."

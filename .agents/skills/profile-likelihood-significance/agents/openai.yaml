@@ -1,0 +1,4 @@
+interface:
+  display_name: "Profile Likelihood Discovery Significance"
+  short_description: "Repo skill: Profile Likelihood Discovery Significance"
+  default_prompt: "Use $profile-likelihood-significance to apply the repo-specific guidance for Profile Likelihood Discovery Significance."

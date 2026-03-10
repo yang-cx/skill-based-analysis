@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Pre-Flight Fact Check"
+  short_description: "Repo skill: Agent Pre-Flight Fact Check"
+  default_prompt: "Use $agent-pre-flight-fact-check to apply the repo-specific guidance for Agent Pre-Flight Fact Check."

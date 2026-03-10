@@ -1,0 +1,4 @@
+interface:
+  display_name: "Selection Engine and Regions"
+  short_description: "Repo skill: Selection Engine and Regions"
+  default_prompt: "Use $selection-engine-and-regions to apply the repo-specific guidance for Selection Engine and Regions."

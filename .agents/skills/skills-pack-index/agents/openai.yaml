@@ -1,0 +1,4 @@
+interface:
+  display_name: "Skills Pack Index"
+  short_description: "Repo skill: Skills Pack Index"
+  default_prompt: "Use $skills-pack-index to apply the repo-specific guidance for Skills Pack Index."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Signal Shape and Spurious-Signal Background Model Selection"
+  short_description: "Repo skill: Signal Shape and Spurious-Signal Background Model Se"
+  default_prompt: "Use $signal-shape-and-spurious-signal-model-selection to apply the repo-specific guidance for Signal Shape and Spurious-Signal Background Model Selection."

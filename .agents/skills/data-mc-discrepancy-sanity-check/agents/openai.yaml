@@ -1,0 +1,4 @@
+interface:
+  display_name: "Data-MC Discrepancy Sanity Check"
+  short_description: "Repo skill: Data-MC Discrepancy Sanity Check"
+  default_prompt: "Use $data-mc-discrepancy-sanity-check to apply the repo-specific guidance for Data-MC Discrepancy Sanity Check."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Category/Channel x Region Partitioning (SR/CR/SB/VR) for LHC Analyses"
+  short_description: "Repo skill: Category/Channel x Region Partitioning (SR/CR/SB/VR)"
+  default_prompt: "Use $category-channel-region-partitioning to apply the repo-specific guidance for Category/Channel x Region Partitioning (SR/CR/SB/VR) for LHC Analyses."

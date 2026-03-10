@@ -1,0 +1,4 @@
+interface:
+  display_name: "Freeze Analysis Histogram Products"
+  short_description: "Repo skill: Freeze Analysis Histogram Products"
+  default_prompt: "Use $freeze-analysis-histogram-products to apply the repo-specific guidance for Freeze Analysis Histogram Products."

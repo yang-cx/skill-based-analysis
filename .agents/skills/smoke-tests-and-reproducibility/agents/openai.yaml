@@ -1,0 +1,4 @@
+interface:
+  display_name: "Smoke Tests and Reproducibility"
+  short_description: "Repo skill: Smoke Tests and Reproducibility"
+  default_prompt: "Use $smoke-tests-and-reproducibility to apply the repo-specific guidance for Smoke Tests and Reproducibility."

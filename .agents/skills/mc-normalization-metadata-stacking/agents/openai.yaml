@@ -1,0 +1,4 @@
+interface:
+  display_name: "MC Normalization from Open-Data Metadata for Multi-Component Stacks"
+  short_description: "Repo skill: MC Normalization from Open-Data Metadata for Multi-C"
+  default_prompt: "Use $mc-normalization-metadata-stacking to apply the repo-specific guidance for MC Normalization from Open-Data Metadata for Multi-Component Stacks."
