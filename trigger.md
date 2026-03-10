@@ -1,6 +1,6 @@
-Run the analysis defined in `analysis/ATLAS_2024_Wplus_high_pT_jets.analysis.json`.
+Run the analysis defined in `analysis/Higgs-to-diphoton.json`.
 
-Use the local skills pack starting from `skills/00_INDEX.md`.
+Use the local skills pack starting from `skills/README.md`.
 Treat the analysis JSON as the source of truth; keep operational/reporting policy in skills.
 
 Inputs are in `input-data` (`data/` and `MC/`).
