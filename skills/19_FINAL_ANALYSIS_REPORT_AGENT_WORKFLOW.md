@@ -7,13 +7,26 @@ Policy requirements:
 - follow the user-defined analysis goal; do not invent new physics objectives
 - document the studied process, discriminating observable, and tested hypothesis
 - describe data and simulated samples, including integrated luminosity and run period
+- describe data samples and Monte Carlo samples in separate subsections
+- for Monte Carlo sample descriptions, include:
+  - generator and simulation configuration
+  - modeled physics process
+  - role classification (`signal` or `background`)
+- do not require a full file-by-file listing; require a clear sample-level description instead
 - for this repository's Run-2 H->gammagamma workflow, the reported central normalization luminosity must be `36.1 fb^-1` unless an explicit override is declared and justified
 - report Monte Carlo normalization based on cross section, k-factor, filter efficiency, and signed generator-weight sum
 - define reconstructed objects and event selections using available dataset observables
 - document signal and control region purposes and selection logic
+- in the event-selection narrative, discuss only regions that enter the log-likelihood fit
+- for each fit region, document the primary fit observable used in that region
 - treat blinded analysis as default; only show SR data after explicit unblinding instruction
 - for non-signal regions, document both pre-fit and post-fit comparisons between data and MC signal/background
 - preserve blinding by hiding signal-region data before unblinding
+- include pre-fit and post-fit signal-region plots in unblinded analyses
+- in blinded analyses, either:
+  - omit signal-region observed-data plots entirely, or
+  - mask the sensitive sub-window (for example around a resonance peak) while allowing sideband data display when appropriate
+- when unblinded, display observed data across the full signal region (including previously sensitive windows)
 - describe the statistical interpretation framework and expected (pre-unblinding) results using Asimov-based fits when applicable
 - for H->gammagamma workflows, explicitly state `pyroot_roofit` as the primary fit backend when presenting fit/significance results; any `pyhf` result must be labeled as a cross-check
 - when expected sensitivity is derived from Asimov pseudo-data, state how Asimov data were generated (source PDF + parameter values from data fit) and whether generation/evaluation used sidebands-only or full mass range
@@ -23,7 +36,10 @@ Policy requirements:
 - avoid inventing systematic uncertainties when not provided; use explicit placeholder language instead
 - include a mandatory appendix that documents all agent deviations, substitutions, and assumptions with justification
 - for category-resolved resonance analyses, include a category-by-category mass-window table at `m_gg = 125 +/- 2 GeV` with expected signal and expected background yields
-- in cut-flow reporting, include both process-level breakdowns and combined totals for signal and background when multiple processes contribute
+- in cut-flow reporting, include data, signal, and background contributions
+- by default, cut-flow reporting must be broken down to individual Monte Carlo samples
+- if the user or analysis JSON explicitly requests merged-process reporting, merged rows may be added
+- always provide combined signal/background totals when multiple processes contribute
 - when alternative MC samples exist for the same process, central cut-flow/report yields must use nominal/reference samples only, with alternatives discussed under systematics
 - for category-resolved resonance analyses, include one diphoton invariant-mass plot per category with:
   - observed data points (sidebands only in blinded mode)
@@ -51,11 +67,14 @@ Normalization relation to state in report:
   9. Statistical Interpretation
   10. Summary
   Appendix A: Agent Decisions and Deviations
-- Monte Carlo sample-table artifact within the report containing DSID, sample label, process, cross section, k-factor, and filter efficiency
+- Monte Carlo sample-table artifact within the report containing DSID, sample label, process, role (`signal`/`background`), generator, simulation configuration, cross section, k-factor, and filter efficiency
 - cut-flow table artifact with data counts and weighted simulated yields
 - process-resolved cut-flow breakdown artifact (individual processes + combined signal/background totals)
+- sample-resolved cut-flow breakdown artifact (individual MC samples), unless explicit merged-process configuration is requested
 - embedded region-plot artifacts including blinded signal-region visualizations
 - embedded pre-fit and post-fit non-signal-region plots
+- embedded pre-fit and post-fit signal-region plots for unblinded analyses
+- in blinded analyses, signal-region plotting artifact must explicitly declare whether SR is omitted or sensitive-window masked
 - caption text for each embedded plot (entries + motivation/justification)
 - statistical-summary artifact reporting expected sensitivity outputs produced before unblinding
 - Asimov-provenance note in the statistical section when Asimov expected significance is reported
@@ -72,14 +91,19 @@ Normalization relation to state in report:
 - section headers exist and appear in required order
 - report explicitly states metadata-driven MC normalization inputs and formula
 - report states the luminosity value used in normalization and, for default central results, shows `36.1 fb^-1`
-- sample table includes required Monte Carlo normalization columns
+- sample table includes required Monte Carlo normalization columns, generator field, simulation-configuration field, and `signal/background` role field
+- report clearly separates data-sample description from Monte Carlo-sample description and does not rely on file-name dumps
+- event-selection narrative is restricted to regions used in the log-likelihood fit and states each fit-region observable
 - cut-flow presentation distinguishes per-process contributions from combined signal/background totals when multi-process signal/background is used
+- cut-flow defaults to individual MC sample rows unless explicit merged-process instruction is provided by user/config
 - report avoids central-yield double counting of nominal and alternative samples for the same physics process
-- signal-region plots are marked/blinded with no overlaid data points
-- non-signal-region pre-fit and post-fit comparisons are clearly identified and use visible data overlays
 - report embeds produced plots directly via markdown image tags instead of citation-only file lists
 - each embedded plot has an adjacent caption sentence/paragraph explaining entries and motivation
 - report explicitly states that blinding is default and records whether explicit unblinding was requested
+- in blinded mode, signal-region data are hidden either by omitting SR observed-data plots or by explicit sensitive-window masking
+- when blinded and sensitive-window masking is used, masked window boundaries are explicitly stated
+- in unblinded mode, report plots show observed data across full signal regions
+- non-signal-region pre-fit and post-fit comparisons are clearly identified and use visible data overlays
 - when blinded category mass plots are used, data points are shown in sidebands and hidden in the blinded window unless explicit unblinding is requested
 - report includes a category-wise `125 +/- 2 GeV` expected-yield table for signal and background
 - report includes one diphoton-mass distribution per active category used in the combined fit

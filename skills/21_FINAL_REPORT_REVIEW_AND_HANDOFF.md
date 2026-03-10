@@ -38,8 +38,15 @@ Policy requirements:
      - distribution plots
      - statistical interpretation
      - summary
+   - confirm sample descriptions include:
+     - separate data and Monte Carlo descriptions
+     - MC generator and simulation configuration
+     - MC process modeling and signal/background role
    - flag missing sections
-2. Numerical sanity checks:
+2. Narrative-scope check:
+   - verify event-selection narrative discusses only regions entering the log-likelihood fit
+   - verify each fit region has its fit observable documented
+3. Numerical sanity checks:
    - detect suspicious patterns:
      - zero yields where events are expected
      - unusually large yields
@@ -47,25 +54,31 @@ Policy requirements:
      - fit parameters at boundaries
      - zero/unrealistic uncertainties
      - significance values inconsistent with yields/model
-3. Plot validation:
+4. Plot validation:
    - detect issues:
      - empty histograms
      - missing distributions
      - axis-range mismatch
      - missing expected data points
      - stack mismatch vs totals
-4. Consistency checks:
+   - verify fit-state normalization semantics:
+     - pre-fit plots use nominal MC prediction
+     - post-fit plots use fitted normalization values
+   - verify blinding semantics:
+     - blinded mode hides sensitive SR data by omission or masking
+     - unblinded mode shows observed data across full SR
+5. Consistency checks:
    - verify:
      - table yields align with histogram integrals/fit summaries
      - categories referenced in text exist in plots/artifacts
      - regions used in text match fit configuration
-5. Workflow outcome assessment:
+6. Workflow outcome assessment:
    - classify run status:
      - completed successfully
      - completed with warnings
      - partially completed
      - major failure
-6. Handoff preparation:
+7. Handoff preparation:
    - confirm report/handoff includes:
      - datasets used
      - normalization method/luminosity
@@ -75,12 +88,12 @@ Policy requirements:
      - statistical model and backend
      - exact output artifact locations
    - flag missing continuation-critical information
-7. Skill-extraction completion gate:
+8. Skill-extraction completion gate:
    - verify `outputs/report/skill_extraction_summary.json` exists and is readable
    - verify summary `status` is either `none_found` or `candidates_created`
    - if `candidates_created`, verify listed `candidate_skills/*` files exist
    - if this gate fails, classify run status as `partially completed` or `major failure` (not handoff-ready)
-8. Data-MC discrepancy completion gate:
+9. Data-MC discrepancy completion gate:
    - verify `outputs/report/data_mc_discrepancy_audit.json` exists and is readable
    - verify discrepancy-audit `status` is one of:
      - `no_substantial_discrepancy`

@@ -7,14 +7,18 @@ Policy requirements:
 - blinded operation is the default mode for all analyses unless an explicit user unblinding directive is provided
 - control-region visualizations may show observed data and modeled expectations
 - in blinded mode, all non-signal regions (CR/VR/SB) should show observed data overlaid with signal and background expectations
-- signal-region visualizations must hide observed data during blinded operation
 - signal expectation must be stacked on top of background expectation in region plots
 - normalization used for expected region plots should be derived from control-region-only fitting when blinding is active
-- produce both pre-fit and post-fit views for non-signal regions:
+- produce both pre-fit and post-fit views for control regions:
   - pre-fit: nominal Monte Carlo normalization before fitting
   - post-fit: expectations normalized with fitted CR-constrained parameters
+- produce both pre-fit and post-fit views for signal regions in unblinded mode
+- in blinded mode, signal-region observed-data handling must use one of:
+  - full SR omission (no observed-data SR plot in report), or
+  - sensitive-window masking (hide data in sensitive signal window but allow sideband data when physically appropriate)
 - control and signal region selections must be mutually exclusive for blinded workflows unless an explicit overlap exception is documented
 - unblinding is an explicit, deliberate action outside the default workflow
+- when unblinded, observed data must be shown across the full signal region
 - for diphoton resonance category fits, background normalization/shape must be fitted to data using sidebands only (for example `105-120` and `130-160 GeV`) while the blinded peak window is excluded from data constraints
 - blinded category mass plots may show full-range expected background and expected signal+background curves, but observed data points must be shown only in sidebands unless explicit unblinding is requested
 - expected signal overlay should be stacked on top of the post-fit background expectation in blinded category plots
@@ -25,10 +29,11 @@ Policy requirements:
 ## Layer 2 — Workflow Contract
 ### Required Artifacts
 - control-region-only normalization-fit artifact containing fitted normalization parameters and fit status
-- blinding-summary artifact indicating region classification and whether data were shown or hidden
+- blinding-summary artifact indicating region classification and whether data were shown, hidden, or masked
 - region-visualization artifact set covering all declared control and signal regions
-- pre-fit non-signal-region visualization artifact set with data, background, and signal overlays
-- post-fit non-signal-region visualization artifact set with data, background, and signal overlays
+- pre-fit control-region visualization artifact set with data, background, and signal overlays
+- post-fit control-region visualization artifact set with data, background, and signal overlays
+- pre-fit and post-fit signal-region visualization artifacts in unblinded mode
 - blinding overlap-audit artifact confirming SR events are excluded from CR normalization scope by default
 - sideband-only background-fit artifact for blinded resonance categories (fit-range declaration + per-category parameters)
 - blinded category mass-plot artifact set with:
@@ -38,13 +43,14 @@ Policy requirements:
 
 ### Acceptance Checks
 - normalization-fit artifact confirms control-region-only fit scope
-- blinding-summary artifact marks signal regions as data hidden during blinded operation
-- number of produced region plots equals number of declared regions
-- for each declared non-signal region, both pre-fit and post-fit plots exist
-- non-signal-region plots show observed data points in both pre-fit and post-fit views
+- blinding-summary artifact marks signal-region handling mode as one of: omitted, masked, or unblinded
+- number of produced region plots equals number of declared regions for the selected handling mode
+- for each declared control region, both pre-fit and post-fit plots exist
+- in unblinded mode, for each declared signal region, both pre-fit and post-fit plots exist and show observed data over full SR
+- in blinded mode, signal-region observed data are hidden by omission or masking with explicit boundary declaration when masking is used
+- control-region plots show observed data points in both pre-fit and post-fit views
 - stacked composition places signal above background in expectation plots
 - overlap audit confirms zero SR/CR overlap for blinded normalization unless an explicit exception is declared
-- signal-region data are shown only when explicit unblinding is requested
 - blinded resonance mass plots hide data points in the blinded peak window while preserving sideband data points
 - sideband-fit artifacts explicitly record sideband ranges used for fit constraints
 - stacked expected signal contribution appears above expected background in blinded resonance plots
@@ -61,8 +67,10 @@ Explicit unblind:
 - `outputs/fit/<fit_id>/blinded_cr_fit.json`
 - `outputs/report/blinding_summary.json`
 - `outputs/report/plots/blinded_region_<region_id>.png`
-- `outputs/report/plots/prefit_region_<region_id>.png` (non-signal regions)
-- `outputs/report/plots/postfit_region_<region_id>.png` (non-signal regions)
+- `outputs/report/plots/prefit_region_<region_id>.png` (control regions)
+- `outputs/report/plots/postfit_region_<region_id>.png` (control regions)
+- `outputs/report/plots/prefit_signal_region_<region_id>.png` (unblinded mode)
+- `outputs/report/plots/postfit_signal_region_<region_id>.png` (unblinded mode)
 - `outputs/fit/<fit_id>/roofit_combined/sideband_fit_parameters.json` (required for H->gammagamma category-resolved workflows)
 - `outputs/report/plots/roofit_combined_mgg_<category>.png` (required for H->gammagamma category-resolved workflows)
 

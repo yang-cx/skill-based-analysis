@@ -11,6 +11,8 @@ Policy requirements:
 - for signal and background, provide both:
   - per-process contributions (process-level breakdown)
   - combined totals (all signal processes combined, all background processes combined)
+- unless explicitly overridden by user instruction or analysis configuration, cut-flow rows must be reported at individual Monte Carlo sample granularity
+- if merged-process reporting is requested, keep a traceable mapping from merged rows back to contributing MC samples
 - avoid double counting when multiple samples represent one physics process; only nominal/reference samples contribute to central cut-flow totals
 
 ## Layer 2 — Workflow Contract
@@ -19,6 +21,7 @@ Policy requirements:
 - region-yield artifact per sample with unweighted counts, weighted yields, and uncertainty proxy terms (for example sum of squared weights)
 - cut-flow provenance artifact linking steps to region definitions
 - process-aggregated cut-flow artifact (per process + combined signal/background totals)
+- sample-resolved cut-flow artifact (individual MC samples) unless explicit merged-process configuration is requested
 - nominal-sample selection audit for cut-flow central values
 
 ### Acceptance Checks
@@ -27,6 +30,8 @@ Policy requirements:
 - final cut-flow selection agrees with region-yield selection used downstream
 - weighted yields and uncertainty proxies are finite and reported
 - process-level sums are consistent with combined signal/background totals within tolerance
+- cut-flow output defaults to individual MC sample rows when no explicit merge instruction/configuration is present
+- when merged rows are used, a merge map from process rows to MC sample IDs is recorded
 - alternative/systematic-only samples do not contribute to central cut-flow totals unless explicitly configured
 
 ## Layer 3 — Example Implementation
@@ -40,6 +45,9 @@ Yield entries:
 Recommended process-level aggregate entries:
 - `process_name`, `role` (`signal` or `background`), `is_nominal`, `yield`
 - combined rows: `signal_total`, `background_total`
+
+Recommended sample-level entries (default mode):
+- `sample_id`, `sample_label`, `process_name`, `role`, `is_nominal`, `yield`
 
 ### CLI (Current Repository)
 `python -m analysis.selections.engine --sample <ID> --registry outputs/samples.registry.json --regions analysis/regions.yaml --cutflow --out outputs/cutflows/<ID>.json`
