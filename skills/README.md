@@ -1,3 +1,19 @@
+# Skills Repository (Semantic Structure)
+
+This README replaces `00_INDEX.md` and serves as the top-level navigator for the refactored skills tree.
+
+## Directory Layout
+- `core_pipeline/`: end-to-end procedural analysis workflow stages
+- `analysis_strategy/`: analysis-design and strategy decisions
+- `physics_facts/`: domain facts and invariant technical rules
+- `governance/`: policy and integrity guardrails
+- `infrastructure/`: operational support, caching, and reproducibility
+- `meta/`: skill-lifecycle governance
+- `interfaces/`: translation/execution interfaces (JSON and narrative)
+- `open_data_specific/`: dataset-release-specific references
+
+## Legacy Index Content (Refactored Paths)
+
 # Skill: Skills Pack Index
 
 ## Layer 1 — Physics Policy
@@ -5,6 +21,7 @@ The analysis skill pack must encode a complete, scientifically coherent HEP work
 
 Core policy requirements:
 - Keep analysis decisions config-driven and reproducible.
+- Start execution from a referenced analysis JSON file; trigger prompts should be minimal and JSON-first.
 - Preserve a clear chain from event selection through statistical inference.
 - Treat signal and background modeling choices as explicit methodological choices.
 - For the default Run-2 H->gammagamma workflow in this repository, central MC normalization must use `lumi_fb = 36.1`.
@@ -12,12 +29,15 @@ Core policy requirements:
 - Never replace existing workflow implementations when adding tools from other projects; keep new tools as additive, selectable options.
 - Enforce blinding where required by the analysis strategy.
 - Require visual and statistical validation before declaring completion.
-- Require execution of post-run skill extraction (`23_EXTRACT_NEW_SKILL_FROM_FAILURE.md`) for every completed run; missing extraction blocks handoff-ready status.
+- Require execution of post-run skill extraction (`meta/extract_new_skill_from_failure.md`) for every completed run; missing extraction blocks handoff-ready status.
 - Use the term **cut flow** consistently.
+- Default production runs must use full statistics unless partial scope is explicitly requested or a same-task fast-test then full-run pattern is declared.
 
 ## Layer 2 — Workflow Contract
 ### Required Artifacts
 - normalized analysis-definition artifact with validated region and fit semantics
+- spec-to-runtime mapping artifact (required when runtime pipeline is not fully JSON-native)
+- deviations-from-spec artifact with explicit substitutions/assumptions
 - sample-classification and normalization artifact
 - process-role and nominal-vs-alternative sample mapping artifacts for context-dependent signal/background definitions
 - open-data metadata-driven normalization artifact for multi-component MC stacking (when this workflow is used)
@@ -46,6 +66,7 @@ Core policy requirements:
 
 ### Acceptance Checks
 - all pipeline-stage artifacts exist and are readable by downstream stages
+- each run references an explicit analysis JSON path
 - each declared fit has a fit-result artifact and significance artifact
 - each declared fit has an explicit backend declaration and backend-consistent diagnostics
 - each H->gammagamma fit declares `pyroot_roofit` as the primary backend
@@ -63,7 +84,7 @@ Core policy requirements:
 
 ## Layer 3 — Example Implementation
 ### Required Inputs (Current Repository)
-- Analysis summary JSON: `analysis/analysis.summary.json`
+- Analysis summary JSON: `analysis/<analysis>.analysis.json`
 - Samples: `inputs/` (or a provided path)
 - Output directory: `outputs/`
 
@@ -99,55 +120,60 @@ Core policy requirements:
 - `outputs/report/skill_extraction_summary.json`
 
 ### Canonical Pipeline Stages (Current Repository)
-1. Run agent pre-flight fact check and resolve critical ambiguities.
-2. Parse and validate summary JSON.
-3. Build sample registry.
-4. Build metadata-driven MC normalization factors for stacked components (when metadata workflow is used).
-5. Build category/region partition specification, checks, and manifest.
-6. Build signal/background strategy and CR/SR normalization map.
-7. Ingest events.
-8. Build objects.
-9. Apply selections and region masks.
-10. Produce cut flow and yields.
-11. Produce histograms for fit observables.
-12. Build signal/background mass-shape models and run spurious-signal model selection.
-13. Build statistical model and run fits.
-14. Compute discovery significance from profile likelihood ratio.
-15. Produce blinded CR/SR visualization products.
-16. Make plots and report.
-17. Run smoke tests.
-18. Run final report review and handoff assessment.
-19. Mandatory: run extract-new-skill-from-failure assessment and write any proposals to `candidate_skills/`, plus `outputs/report/skill_extraction_summary.json` even when zero candidates are created.
+1. Optional: convert narrative analysis text into structured analysis JSON and produce a gap report.
+2. Run agent pre-flight fact check and resolve critical ambiguities.
+3. Parse and validate summary JSON.
+4. Apply JSON-spec-driven execution contract (including runtime mapping/deviation logging).
+5. Build sample registry.
+6. Build metadata-driven MC normalization factors for stacked components (when metadata workflow is used).
+7. Build category/region partition specification, checks, and manifest.
+8. Build signal/background strategy and CR/SR normalization map.
+9. Ingest events.
+10. Build objects.
+11. Apply selections and region masks.
+12. Produce cut flow and yields.
+13. Produce histograms for fit observables.
+14. Build signal/background mass-shape models and run spurious-signal model selection.
+15. Build statistical model and run fits.
+16. Compute discovery significance from profile likelihood ratio.
+17. Produce blinded CR/SR visualization products.
+18. Make plots and report.
+19. Run smoke tests.
+20. Run final report review and handoff assessment.
+21. Mandatory: run extract-new-skill-from-failure assessment and write any proposals to `candidate_skills/`, plus `outputs/report/skill_extraction_summary.json` even when zero candidates are created.
 
 ### Skill List (Current Repository)
 Core pipeline skills:
-- `01_BOOTSTRAP_REPO.md`
-- `22_AGENT_PRE_FLIGHT_FACT_CHECK.md`
-- `02_READ_SUMMARY_AND_VALIDATE.md`
-- `03_SAMPLE_REGISTRY_AND_NORMALIZATION.md`
-- `18_MC_NORMALIZATION_METADATA_STACKING.md`
-- `15_SIGNAL_BACKGROUND_STRATEGY_AND_CR_CONSTRAINTS.md`
-- `04_EVENT_IO_AND_COLUMNAR_MODEL.md`
-- `05_OBJECT_DEFINITIONS.md`
-- `06_SELECTION_ENGINE_AND_REGIONS.md`
-- `07_CUT_FLOW_AND_YIELDS.md`
-- `08_HISTOGRAMMING_AND_TEMPLATES.md`
-- `27_FREEZE_ANALYSIS_HISTOGRAM_PRODUCTS.md`
-- `16_SIGNAL_SHAPE_AND_SPURIOUS_SIGNAL_MODEL_SELECTION.md`
-- `09_SYSTEMATICS_AND_NUISANCES.md`
-- `10_WORKSPACE_AND_FIT_PYHF.md`
-- `11_PLOTTING_AND_REPORT.md`
-- `19_FINAL_ANALYSIS_REPORT_AGENT_WORKFLOW.md`
-- `17_CONTROL_REGION_SIGNAL_REGION_BLINDING_AND_VISUALIZATION.md`
-- `12_SMOKE_TESTS_AND_REPRODUCIBILITY.md`
-- `14_PROFILE_LIKELIHOOD_SIGNIFICANCE.md`
-- `20_CATEGORY_CHANNEL_REGION_PARTITIONING.md`
-- `21_FINAL_REPORT_REVIEW_AND_HANDOFF.md`
-- `23_EXTRACT_NEW_SKILL_FROM_FAILURE.md`
+- `core_pipeline/bootstrap_repo.md`
+- `interfaces/narrative_to_analysis_json_translator.md`
+- `governance/agent_pre_flight_fact_check.md`
+- `interfaces/json_spec_driven_execution.md`
+- `governance/full_statistics_execution_policy.md`
+- `core_pipeline/read_summary_and_validate.md`
+- `core_pipeline/sample_registry_and_normalization.md`
+- `physics_facts/mc_normalization_metadata_stacking.md`
+- `analysis_strategy/signal_background_strategy_and_cr_constraints.md`
+- `core_pipeline/event_io_and_columnar_model.md`
+- `physics_facts/object_definitions.md`
+- `core_pipeline/selection_engine_and_regions.md`
+- `core_pipeline/cut_flow_and_yields.md`
+- `core_pipeline/histogramming_and_templates.md`
+- `infrastructure/freeze_analysis_histogram_products.md`
+- `analysis_strategy/signal_shape_and_spurious_signal_model_selection.md`
+- `core_pipeline/systematics_and_nuisances.md`
+- `core_pipeline/workspace_and_fit_pyhf.md`
+- `core_pipeline/plotting_and_report.md`
+- `core_pipeline/final_analysis_report_agent_workflow.md`
+- `analysis_strategy/control_region_signal_region_blinding_and_visualization.md`
+- `infrastructure/smoke_tests_and_reproducibility.md`
+- `core_pipeline/profile_likelihood_significance.md`
+- `analysis_strategy/category_channel_region_partitioning.md`
+- `core_pipeline/final_report_review_and_handoff.md`
+- `meta/extract_new_skill_from_failure.md`
 
 Verification skills:
-- `13_VISUAL_VERIFICATION.md`
-- `24_HISTOGRAM_PLOTTING_INVARIANTS.md`
-- `28_DATA_MC_DISCREPANCY_SANITY_CHECK.md`
-- `25_ROOTMLTOOL_CACHED_ANALYSIS.md`
-- `26_STATTOOL_OPTIONAL_PYHF_BACKEND.md`
+- `infrastructure/visual_verification.md`
+- `physics_facts/histogram_plotting_invariants.md`
+- `governance/data_mc_discrepancy_sanity_check.md`
+- `infrastructure/rootmltool_cached_analysis.md`
+- `infrastructure/stattool_optional_pyhf_backend.md`

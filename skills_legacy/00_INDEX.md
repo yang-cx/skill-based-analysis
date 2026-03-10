@@ -1,0 +1,163 @@
+# Skill: Skills Pack Index
+
+## Layer 1 — Physics Policy
+The analysis skill pack must encode a complete, scientifically coherent HEP workflow from analysis definition to statistical interpretation.
+
+Core policy requirements:
+- Keep analysis decisions config-driven and reproducible.
+- Start execution from a referenced analysis JSON file; trigger prompts should be minimal and JSON-first.
+- Preserve a clear chain from event selection through statistical inference.
+- Treat signal and background modeling choices as explicit methodological choices.
+- For the default Run-2 H->gammagamma workflow in this repository, central MC normalization must use `lumi_fb = 36.1`.
+- For H->gammagamma resonance analyses in this repository, use `pyroot_roofit` as the mandatory primary backend for mass fits and significance; non-ROOT backends may be used only as explicitly labeled cross-checks.
+- Never replace existing workflow implementations when adding tools from other projects; keep new tools as additive, selectable options.
+- Enforce blinding where required by the analysis strategy.
+- Require visual and statistical validation before declaring completion.
+- Require execution of post-run skill extraction (`23_EXTRACT_NEW_SKILL_FROM_FAILURE.md`) for every completed run; missing extraction blocks handoff-ready status.
+- Use the term **cut flow** consistently.
+- Default production runs must use full statistics unless partial scope is explicitly requested or a same-task fast-test then full-run pattern is declared.
+
+## Layer 2 — Workflow Contract
+### Required Artifacts
+- normalized analysis-definition artifact with validated region and fit semantics
+- spec-to-runtime mapping artifact (required when runtime pipeline is not fully JSON-native)
+- deviations-from-spec artifact with explicit substitutions/assumptions
+- sample-classification and normalization artifact
+- process-role and nominal-vs-alternative sample mapping artifacts for context-dependent signal/background definitions
+- open-data metadata-driven normalization artifact for multi-component MC stacking (when this workflow is used)
+- signal/background strategy artifact including control-to-signal normalization intent
+- category/region partition specification artifact (category axis x region axis)
+- partition completeness/exclusivity check artifact
+- partition manifest artifact for downstream stages
+- region-selection artifact with cut flow and yield summaries
+- process-resolved cut-flow artifact (individual process contributions plus combined signal/background totals)
+- region-overlap audit artifact documenting SR/CR overlap checks and any explicit exceptions
+- histogram-template artifact for fit observables
+- signal-shape and background-model-selection artifacts when analytic mass modeling is used
+- category-resolved RooFit artifacts for the H->gammagamma analytic resonance workflow (per-category DS-CB parameters, sideband-fit parameters, blinded category mass plots, and mass-window expected-yield table)
+- systematic-uncertainty artifact
+- statistical-workspace artifact and per-fit result artifacts
+- fit-backend declaration artifact per fit with `pyroot_roofit` primary-backend provenance and any optional cross-check backend notes
+- discovery-significance artifact per fit
+- optional Asimov expected-significance artifact per fit with generation provenance
+- Asimov sensitivity artifacts should document full-range generation/evaluation and tested generation hypothesis (for example `mu_gen = 0` for discovery sensitivity)
+- blinding-summary artifact and blinded region-visualization artifact set
+- visual-verification artifact set for required diagnostics
+- data-MC discrepancy artifacts (`outputs/report/data_mc_discrepancy_audit.json`, `outputs/report/data_mc_check_log.json`) for every run, including zero-discrepancy runs
+- narrative analysis report artifact
+- final publication-style report artifact with agent decision appendix
+- skill-extraction summary artifact at `outputs/report/skill_extraction_summary.json` (required even when no candidates are found)
+
+### Acceptance Checks
+- all pipeline-stage artifacts exist and are readable by downstream stages
+- each run references an explicit analysis JSON path
+- each declared fit has a fit-result artifact and significance artifact
+- each declared fit has an explicit backend declaration and backend-consistent diagnostics
+- each H->gammagamma fit declares `pyroot_roofit` as the primary backend
+- region-level histograms, yields, and cut flows are mutually consistent within tolerance
+- signal and control regions used together in a fit are mutually exclusive at event level unless an explicit, justified overlap exception is declared
+- blinding metadata confirms signal-region data handling policy
+- required verification plots are present
+- substantial data-MC discrepancies are explicitly reported and not cosmetically tuned away
+- `outputs/report/data_mc_discrepancy_audit.json` exists, is readable, and declares `status` in `{no_substantial_discrepancy, discrepancy_investigated_bug_found, discrepancy_investigated_no_bug_found}`
+- `outputs/report/data_mc_check_log.json` exists and is readable
+- final report summarizes selection, modeling, fit, significance, and implementation differences
+- partition checks confirm category coverage/exclusivity and unique `(category, region)` keys
+- central yields/cut flows do not double count physics processes represented by both nominal and alternative MC samples
+- `outputs/report/skill_extraction_summary.json` exists, is readable, and has `status` in `{none_found, candidates_created}`
+
+## Layer 3 — Example Implementation
+### Required Inputs (Current Repository)
+- Analysis summary JSON: `analysis/<analysis>.analysis.json`
+- Samples: `inputs/` (or a provided path)
+- Output directory: `outputs/`
+
+### Minimum Outputs (Current Repository)
+- `outputs/cutflows/*.json`
+- `outputs/cutflows_process_breakdown.json` (or equivalent process-resolved cut-flow artifact)
+- `outputs/yields/*.json`
+- `outputs/hists/**/*.npz` (or ROOT, but be consistent)
+- `outputs/fit/*/results.json`
+- `outputs/fit/*/significance.json`
+- `outputs/background_modeling_strategy.json`
+- `outputs/samples.classification.json`
+- `outputs/cr_sr_constraint_map.json`
+- `outputs/report/partition_spec.json`
+- `outputs/report/partition_checks.json`
+- `outputs/manifest/partitions.json`
+- `outputs/fit/*/signal_pdf.json`
+- `outputs/fit/*/background_pdf_scan.json`
+- `outputs/fit/*/background_pdf_choice.json`
+- `outputs/fit/*/spurious_signal.json`
+- `outputs/fit/*/blinded_cr_fit.json`
+- `outputs/fit/*/roofit_combined/significance.json` (required for H->gammagamma workflows)
+- `outputs/fit/*/roofit_combined/signal_dscb_parameters.json` (required for H->gammagamma workflows)
+- `outputs/fit/*/roofit_combined/sideband_fit_parameters.json` (required for H->gammagamma workflows)
+- `outputs/fit/*/roofit_combined/cutflow_mass_window_125pm2.json` (required for H->gammagamma workflows)
+- `outputs/report/plots/roofit_combined_mgg_*.png` (required for H->gammagamma workflows)
+- `outputs/report/blinding_summary.json`
+- `outputs/report/plots/blinded_region_*.png`
+- `outputs/report/report.md`
+- `outputs/report/*.png`
+- `outputs/report/data_mc_discrepancy_audit.json`
+- `outputs/report/data_mc_check_log.json`
+- `outputs/report/skill_extraction_summary.json`
+
+### Canonical Pipeline Stages (Current Repository)
+1. Optional: convert narrative analysis text into structured analysis JSON and produce a gap report.
+2. Run agent pre-flight fact check and resolve critical ambiguities.
+3. Parse and validate summary JSON.
+4. Apply JSON-spec-driven execution contract (including runtime mapping/deviation logging).
+5. Build sample registry.
+6. Build metadata-driven MC normalization factors for stacked components (when metadata workflow is used).
+7. Build category/region partition specification, checks, and manifest.
+8. Build signal/background strategy and CR/SR normalization map.
+9. Ingest events.
+10. Build objects.
+11. Apply selections and region masks.
+12. Produce cut flow and yields.
+13. Produce histograms for fit observables.
+14. Build signal/background mass-shape models and run spurious-signal model selection.
+15. Build statistical model and run fits.
+16. Compute discovery significance from profile likelihood ratio.
+17. Produce blinded CR/SR visualization products.
+18. Make plots and report.
+19. Run smoke tests.
+20. Run final report review and handoff assessment.
+21. Mandatory: run extract-new-skill-from-failure assessment and write any proposals to `candidate_skills/`, plus `outputs/report/skill_extraction_summary.json` even when zero candidates are created.
+
+### Skill List (Current Repository)
+Core pipeline skills:
+- `01_BOOTSTRAP_REPO.md`
+- `31_NARRATIVE_TO_ANALYSIS_JSON_TRANSLATOR.md`
+- `22_AGENT_PRE_FLIGHT_FACT_CHECK.md`
+- `30_JSON_SPEC_DRIVEN_EXECUTION.md`
+- `29_FULL_STATISTICS_EXECUTION_POLICY.md`
+- `02_READ_SUMMARY_AND_VALIDATE.md`
+- `03_SAMPLE_REGISTRY_AND_NORMALIZATION.md`
+- `18_MC_NORMALIZATION_METADATA_STACKING.md`
+- `15_SIGNAL_BACKGROUND_STRATEGY_AND_CR_CONSTRAINTS.md`
+- `04_EVENT_IO_AND_COLUMNAR_MODEL.md`
+- `05_OBJECT_DEFINITIONS.md`
+- `06_SELECTION_ENGINE_AND_REGIONS.md`
+- `07_CUT_FLOW_AND_YIELDS.md`
+- `08_HISTOGRAMMING_AND_TEMPLATES.md`
+- `27_FREEZE_ANALYSIS_HISTOGRAM_PRODUCTS.md`
+- `16_SIGNAL_SHAPE_AND_SPURIOUS_SIGNAL_MODEL_SELECTION.md`
+- `09_SYSTEMATICS_AND_NUISANCES.md`
+- `10_WORKSPACE_AND_FIT_PYHF.md`
+- `11_PLOTTING_AND_REPORT.md`
+- `19_FINAL_ANALYSIS_REPORT_AGENT_WORKFLOW.md`
+- `17_CONTROL_REGION_SIGNAL_REGION_BLINDING_AND_VISUALIZATION.md`
+- `12_SMOKE_TESTS_AND_REPRODUCIBILITY.md`
+- `14_PROFILE_LIKELIHOOD_SIGNIFICANCE.md`
+- `20_CATEGORY_CHANNEL_REGION_PARTITIONING.md`
+- `21_FINAL_REPORT_REVIEW_AND_HANDOFF.md`
+- `23_EXTRACT_NEW_SKILL_FROM_FAILURE.md`
+
+Verification skills:
+- `13_VISUAL_VERIFICATION.md`
+- `24_HISTOGRAM_PLOTTING_INVARIANTS.md`
+- `28_DATA_MC_DISCREPANCY_SANITY_CHECK.md`
+- `25_ROOTMLTOOL_CACHED_ANALYSIS.md`
+- `26_STATTOOL_OPTIONAL_PYHF_BACKEND.md`
