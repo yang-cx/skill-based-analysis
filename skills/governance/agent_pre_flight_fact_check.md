@@ -35,6 +35,8 @@ Policy requirements:
    - verify luminosity value, units, and data-taking period are clear
 3. Signal/background samples:
    - verify signal/background mapping and dataset identifiers are clear
+   - verify nominal-vs-alternative sample selection is defined for each central physics process when multiple MC candidates exist
+   - verify no decay-mismatched or inclusive samples are silently entering a decay-specific central signal definition
 4. Systematic uncertainties:
    - verify there is an explicit statement:
      - systematics list
@@ -82,6 +84,7 @@ Produce a short pre-flight summary containing:
 ### Related Skills
 - `core_pipeline/read_summary_and_validate.md`
 - `core_pipeline/sample_registry_and_normalization.md`
+- `governance/mc_sample_disambiguation_and_nominal_selection.md`
 - `analysis_strategy/signal_background_strategy_and_cr_constraints.md`
 - `analysis_strategy/control_region_signal_region_blinding_and_visualization.md`
 - `governance/skill_refresh_and_checkpointing.md`

@@ -19,6 +19,8 @@ Policy requirements:
 - for this ATLAS Open Data Run-2 H->gammagamma workflow, use `lumi_fb = 36.1` for central MC normalization unless an explicit analysis-level override is requested and documented
 - record missing normalization inputs explicitly rather than silently assuming values
 - when multiple MC samples exist for one physics process (for example alternate generators/modeling), define one nominal/reference sample set for central yields and mark alternative samples for systematic variations only
+- for decay-specific analyses, central signal samples must match the target decay/final state; inclusive or other-decay Higgs samples require explicit exclusion or non-central labeling
+- when dataset-name semantics are insufficient to determine a unique nominal sample set, invoke the MC sample disambiguation skill and block on unresolved ambiguity
 
 Normalization convention for simulated samples:
 `w_norm = (xsec_pb * k_factor * filter_eff * lumi_fb * 1000.0) / sumw`
@@ -28,6 +30,7 @@ Normalization convention for simulated samples:
 - sample-registry artifact containing sample identity, process mapping, classification, and normalization inputs
 - process-role mapping artifact declaring, per analysis target, which processes are treated as signal vs background
 - nominal-vs-alternative sample mapping artifact per physics process
+- MC sample disambiguation artifact when multiple candidate datasets exist for the same central physics process
 - normalization-expression artifact describing how per-event weights are formed
 - normalization-audit artifact listing missing inputs and warnings
 
@@ -39,6 +42,7 @@ Normalization convention for simulated samples:
 - normalization value is computable when all required terms are available
 - default central-yield registry rows for MC have `lumi_fb = 36.1`
 - central-yield workflows include only nominal/reference samples per physics process; alternatives are flagged as non-central
+- if multiple candidate datasets exist for one central process, one nominal/reference choice is recorded and any unresolved ambiguity blocks execution
 
 ## Layer 3 — Example Implementation
 ### Registry Fields (Current Repository)
@@ -62,5 +66,6 @@ For each sample:
 
 ### Downstream Reference
 After this skill, run:
+- `governance/mc_sample_disambiguation_and_nominal_selection.md` to resolve unique nominal/reference MC sample sets before central yields and fits
 - `physics_facts/mc_normalization_metadata_stacking.md` for metadata.csv-driven normalization of multi-sample MC stacks in ATLAS Open Data workflows
 - `analysis_strategy/signal_background_strategy_and_cr_constraints.md`

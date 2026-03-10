@@ -32,6 +32,7 @@ Policy requirements:
 - fit/significance artifacts
 - run configuration files
 - workflow execution logs/manifests
+- `outputs/report/mc_sample_selection.json`
 - `outputs/report/skill_extraction_summary.json`
 - `outputs/report/data_mc_discrepancy_audit.json`
 - `outputs/report/data_mc_check_log.json`
@@ -54,6 +55,7 @@ Policy requirements:
      - separate data and Monte Carlo descriptions
      - MC generator and simulation configuration
      - MC process modeling and signal/background role
+   - when multiple candidate MC samples existed, confirm the report contains a dedicated appendix describing the nominal/reference sample selection rationale
    - flag missing sections
 2. Narrative-scope check:
    - verify event-selection narrative discusses only regions entering the log-likelihood fit
@@ -93,6 +95,7 @@ Policy requirements:
 7. Handoff preparation:
    - confirm report/handoff includes:
      - datasets used
+     - MC sample-selection rationale artifact and appendix location
      - normalization method/luminosity
      - region/category definitions
      - key configuration parameters
@@ -156,5 +159,6 @@ Produce a structured review summary containing:
 - `core_pipeline/plotting_and_report.md`
 - `infrastructure/visual_verification.md`
 - `core_pipeline/final_analysis_report_agent_workflow.md`
+- `governance/mc_sample_disambiguation_and_nominal_selection.md`
 - `core_pipeline/profile_likelihood_significance.md`
 - `governance/skill_refresh_and_checkpointing.md`

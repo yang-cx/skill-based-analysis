@@ -41,6 +41,7 @@ Core policy requirements:
 - deviations-from-spec artifact with explicit substitutions/assumptions
 - sample-classification and normalization artifact
 - process-role and nominal-vs-alternative sample mapping artifacts for context-dependent signal/background definitions
+- MC sample disambiguation and nominal-selection artifact for processes with multiple candidate datasets
 - open-data metadata-driven normalization artifact for multi-component MC stacking (when this workflow is used)
 - signal/background strategy artifact including control-to-signal normalization intent
 - category/region partition specification artifact (category axis x region axis)
@@ -84,6 +85,7 @@ Core policy requirements:
 - final report summarizes selection, modeling, fit, significance, and implementation differences
 - partition checks confirm category coverage/exclusivity and unique `(category, region)` keys
 - central yields/cut flows do not double count physics processes represented by both nominal and alternative MC samples
+- each central physics process with multiple candidate datasets has exactly one recorded nominal/reference selection, or the run is blocked pending clarification
 - `outputs/report/skill_extraction_summary.json` exists, is readable, and has `status` in `{none_found, candidates_created}`
 - `outputs/report/skill_refresh_plan.json` exists and is readable
 - `outputs/report/skill_refresh_log.jsonl` exists and is readable
@@ -104,6 +106,7 @@ Core policy requirements:
 - `outputs/fit/*/significance.json`
 - `outputs/background_modeling_strategy.json`
 - `outputs/samples.classification.json`
+- `outputs/report/mc_sample_selection.json`
 - `outputs/cr_sr_constraint_map.json`
 - `outputs/report/partition_spec.json`
 - `outputs/report/partition_checks.json`
@@ -136,28 +139,30 @@ Core policy requirements:
 4. Parse and validate summary JSON.
 5. Apply JSON-spec-driven execution contract (including runtime mapping/deviation logging).
 6. Build sample registry.
-7. Build metadata-driven MC normalization factors for stacked components (when metadata workflow is used).
-8. Build category/region partition specification, checks, and manifest.
-9. Build signal/background strategy and CR/SR normalization map.
-10. Ingest events.
-11. Build objects.
-12. Apply selections and region masks.
-13. Produce cut flow and yields.
-14. Produce histograms for fit observables.
-15. Build signal/background mass-shape models and run spurious-signal model selection.
-16. Build statistical model and run fits.
-17. Compute discovery significance from profile likelihood ratio.
-18. Produce blinded CR/SR visualization products.
-19. Make plots and report.
-20. Run smoke tests.
-21. Run final report review and handoff assessment (including skill-refresh/checkpoint gate).
-22. Mandatory: run extract-new-skill-from-failure assessment and write any proposals to `candidate_skills/`, plus `outputs/report/skill_extraction_summary.json` even when zero candidates are created.
+7. Resolve MC sample disambiguation and nominal/reference sample selection for central yields and fits.
+8. Build metadata-driven MC normalization factors for stacked components (when metadata workflow is used).
+9. Build category/region partition specification, checks, and manifest.
+10. Build signal/background strategy and CR/SR normalization map.
+11. Ingest events.
+12. Build objects.
+13. Apply selections and region masks.
+14. Produce cut flow and yields.
+15. Produce histograms for fit observables.
+16. Build signal/background mass-shape models and run spurious-signal model selection.
+17. Build statistical model and run fits.
+18. Compute discovery significance from profile likelihood ratio.
+19. Produce blinded CR/SR visualization products.
+20. Make plots and report.
+21. Run smoke tests.
+22. Run final report review and handoff assessment (including skill-refresh/checkpoint gate).
+23. Mandatory: run extract-new-skill-from-failure assessment and write any proposals to `candidate_skills/`, plus `outputs/report/skill_extraction_summary.json` even when zero candidates are created.
 
 ### Skill List (Current Repository)
 Core pipeline skills:
 - `core_pipeline/bootstrap_repo.md`
 - `interfaces/narrative_to_analysis_json_translator.md`
 - `governance/agent_pre_flight_fact_check.md`
+- `governance/mc_sample_disambiguation_and_nominal_selection.md`
 - `governance/skill_refresh_and_checkpointing.md`
 - `interfaces/json_spec_driven_execution.md`
 - `governance/full_statistics_execution_policy.md`

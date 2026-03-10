@@ -16,6 +16,7 @@ Policy requirements:
 - document the studied process, discriminating observable, and tested hypothesis
 - describe data and simulated samples, including integrated luminosity and run period
 - describe data samples and Monte Carlo samples in separate subsections
+- in the main body Monte Carlo subsection, discuss only the MC samples actually used for central results
 - for Monte Carlo sample descriptions, include:
   - generator and simulation configuration
   - modeled physics process
@@ -49,6 +50,8 @@ Policy requirements:
 - if the user or analysis JSON explicitly requests merged-process reporting, merged rows may be added
 - always provide combined signal/background totals when multiple processes contribute
 - when alternative MC samples exist for the same process, central cut-flow/report yields must use nominal/reference samples only, with alternatives discussed under systematics
+- include a separate appendix section that explains why the nominal/reference MC samples were selected from the available candidate files
+- the appendix must record rejected or alternative candidates and any human clarification used to resolve ambiguity
 - for category-resolved resonance analyses, include one diphoton invariant-mass plot per category with:
   - observed data points (sidebands only in blinded mode)
   - expected post-fit background
@@ -76,7 +79,9 @@ Normalization relation to state in report:
   9. Statistical Interpretation
   10. Summary
   Appendix A: Agent Decisions and Deviations
+  Appendix B: Monte Carlo Sample Selection Rationale
 - Monte Carlo sample-table artifact within the report containing DSID, sample label, process, role (`signal`/`background`), generator, simulation configuration, cross section, k-factor, and filter efficiency
+- MC sample-selection artifact at `outputs/report/mc_sample_selection.json`
 - cut-flow table artifact with data counts and weighted simulated yields
 - process-resolved cut-flow breakdown artifact (individual processes + combined signal/background totals)
 - sample-resolved cut-flow breakdown artifact (individual MC samples), unless explicit merged-process configuration is requested
@@ -106,6 +111,7 @@ Normalization relation to state in report:
 - report states the luminosity value used in normalization and, for default central results, shows `36.1 fb^-1`
 - sample table includes required Monte Carlo normalization columns, generator field, simulation-configuration field, and `signal/background` role field
 - report clearly separates data-sample description from Monte Carlo-sample description and does not rely on file-name dumps
+- report main body describes only central nominal/reference MC samples used in the actual yields and fits
 - event-selection narrative is restricted to regions used in the log-likelihood fit and states each fit-region observable
 - cut-flow presentation distinguishes per-process contributions from combined signal/background totals when multi-process signal/background is used
 - cut-flow defaults to individual MC sample rows unless explicit merged-process instruction is provided by user/config
@@ -126,6 +132,8 @@ Normalization relation to state in report:
 - when Asimov discovery sensitivity is reported, the report explicitly documents `mu_gen = 1` signal-plus-background generation, the background-parameter source from the `mu = 0` fit, and full-range evaluation including the signal region
 - statistical interpretation section states the backend used for the reported fit/significance numbers and confirms `pyroot_roofit` is primary for H->gammagamma
 - Appendix A exists and contains at least one structured entry whenever substitutions/deviations occurred
+- Appendix B exists and explains the nominal/reference MC sample choice per central physics process, including rejected or alternative candidates
+- `outputs/report/mc_sample_selection.json` exists, is readable, and is consistent with the report's main-body sample discussion
 - report (or linked handoff note) references data-MC discrepancy status from `outputs/report/data_mc_discrepancy_audit.json`
 - report (or linked handoff note) references `outputs/report/skill_extraction_summary.json` with its status (`none_found` or `candidates_created`)
 - report (or linked handoff note) references `outputs/report/skill_checkpoint_status.json` with its status (`pass` or `fail`)
@@ -142,6 +150,7 @@ Normalization relation to state in report:
 
 ### Related Skills
 - `core_pipeline/sample_registry_and_normalization.md`
+- `governance/mc_sample_disambiguation_and_nominal_selection.md`
 - `physics_facts/mc_normalization_metadata_stacking.md`
 - `core_pipeline/plotting_and_report.md`
 - `analysis_strategy/control_region_signal_region_blinding_and_visualization.md`
