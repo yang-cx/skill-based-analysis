@@ -17,6 +17,7 @@ Policy requirements:
 - scan candidate background functional forms with increasing complexity
 - evaluate spurious signal by fitting signal-plus-background to a background-only template
 - for resonance searches in this repository (notably `H->gammagamma`), PyROOT/RooFit is the mandatory primary backend for analytic-function fitting
+- for H->gammagamma primary interpretation, non-RooFit or binned-template substitutions are not valid replacements for the mandatory RooFit analytic-function path
 - backend choice must remain transparent: export machine-readable JSON summaries even when PyROOT is used
 - for category-resolved diphoton fits, fit a double-sided Crystal Ball signal shape independently in each category
 - category-resolved workflows must support arbitrary category counts from fit configuration (not fixed to a specific number)
@@ -47,6 +48,8 @@ Selection policy:
 - chosen background model includes explicit rule-based justification
 - spurious-signal result includes pass/fail status against the target criterion
 - fitted parameter values and fit status from PyROOT are exported in non-ROOT machine-readable form
+- H->gammagamma backend provenance records `pyroot_roofit` as primary and includes analytic PDF family per category
+- if mandatory RooFit analytic modeling cannot be executed, stage status is blocked/failed for primary results
 
 ## Layer 3 — Example Implementation
 ### Expected Outputs (Current Repository)

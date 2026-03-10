@@ -19,6 +19,7 @@ Policy requirements:
 - default to full-statistics execution unless user scope explicitly requests partial statistics
 - when the selected runtime pipeline is not fully JSON-native, create an explicit mapping from JSON intent to runtime configuration and document deviations
 - if a user constraint overrides JSON content (for example luminosity, backend, or blinding scope), record the override explicitly
+- mandatory physics-method constraints from skills (for example H->gammagamma primary RooFit analytic fits) are fail-closed and cannot be relaxed by runtime tool availability
 - do not silently drop JSON-defined fit regions, observables, or process roles
 - at execution-phase boundaries, record skill-refresh checkpoints per `governance/skill_refresh_and_checkpointing.md`
 
@@ -41,6 +42,8 @@ Policy requirements:
 - selected runtime regions/observables are traceable to JSON fields
 - each runtime override is listed with `source = user_override`
 - each approximation/substitution is listed with reason and expected analysis impact
+- for H->gammagamma primary outputs, `fit_backend_primary` resolves to `pyroot_roofit`
+- when mandatory method constraints cannot be satisfied, execution status is blocked and no substituted primary fit/significance claim is emitted
 - final report references the JSON path used for the run
 - JSON-validation and execution-contract checkpoints are present in skill-refresh artifacts
 

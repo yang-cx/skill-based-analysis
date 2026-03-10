@@ -38,6 +38,7 @@ Policy requirements:
 - when unblinded, display observed data across the full signal region (including previously sensitive windows)
 - describe the statistical interpretation framework and expected (pre-unblinding) results using Asimov-based fits when applicable
 - for H->gammagamma workflows, explicitly state `pyroot_roofit` as the primary fit backend when presenting fit/significance results; any `pyhf` result must be labeled as a cross-check
+- for H->gammagamma workflows, if RooFit analytic-fit primary results are unavailable, report blocked status instead of promoting non-ROOT results to central claims
 - when expected sensitivity is derived from Asimov pseudo-data, state how Asimov data were generated (source PDF + parameter values from data fit) and whether generation/evaluation used sidebands-only or full mass range
 - Asimov pseudo-data figures/tables may include the full mass range (including signal window) in blinded workflows, but must be clearly labeled as expected/Asimov
 - for blinded sensitivity claims, expected significance must come from Asimov fits over the full observable range (including signal region), not from observed signal-window data
@@ -131,6 +132,7 @@ Normalization relation to state in report:
 - when Asimov significance is reported, the report explicitly distinguishes expected (Asimov) from observed significance and records generation provenance
 - when Asimov discovery sensitivity is reported, the report explicitly documents `mu_gen = 1` signal-plus-background generation, the background-parameter source from the `mu = 0` fit, and full-range evaluation including the signal region
 - statistical interpretation section states the backend used for the reported fit/significance numbers and confirms `pyroot_roofit` is primary for H->gammagamma
+- report does not present non-ROOT H->gammagamma numbers as primary results; if only cross-check numbers exist, this is explicitly labeled and central claim is blocked
 - Appendix A exists and contains at least one structured entry whenever substitutions/deviations occurred
 - Appendix B exists and explains the nominal/reference MC sample choice per central physics process, including rejected or alternative candidates
 - `outputs/report/mc_sample_selection.json` exists, is readable, and is consistent with the report's main-body sample discussion

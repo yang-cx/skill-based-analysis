@@ -18,6 +18,7 @@ Policy requirements:
 - after pre-flight passes and execution begins, do not interrupt again until completion unless a hard technical failure prevents continuation
 - record any assumptions explicitly
 - initialize skill-refresh/checkpoint planning at run start and emit the first refresh checkpoint record
+- verify mandatory method constraints are technically satisfiable before run start
 
 ## Layer 2 — Workflow Contract
 ### Inputs
@@ -50,12 +51,26 @@ Policy requirements:
    - if blinded, verify SR data handling policy is explicit
 7. Statistical method:
    - verify requested statistical procedure and outputs are explicit
+8. Mandatory backend/method capability:
+   - verify required primary backend capabilities are available in the runtime
+   - for H->gammagamma, verify PyROOT/RooFit analytic-function fit capability for primary fit and significance
+9. Runtime/tooling readiness:
+   - verify a functioning analysis pipeline/toolchain is available for required stages
+   - verify ROOT event ingestion is supported through `uproot`
+   - if missing-but-buildable runtime/tooling is detected, plan construction/repair before production execution
 
 ### Escalation Rule
 - if any critical item above is missing or ambiguous:
   - pause execution
   - present a concise missing/ambiguous-items list to the human
   - request clarification
+- if functioning runtime/tooling is missing but buildable in-task:
+  - construct/repair the missing pipeline/tooling first
+  - run a limited-entry validation pass if needed
+  - continue to full-sample execution before declaring completion
+- if mandatory backend/method capability is unavailable for the analysis target:
+  - block execution for primary results
+  - do not auto-substitute a different primary backend
 - after clarification is received, proceed and avoid further interruption during run execution
 
 ### Required Output

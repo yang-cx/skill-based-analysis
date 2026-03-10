@@ -16,6 +16,7 @@ Policy requirements:
 - perform an unconditional fit where signal strength is free
 - construct the one-sided discovery test statistic
 - for H->gammagamma workflows, compute primary significance with `pyroot_roofit`; if an optional cross-check backend is used, apply the same `q0` definition
+- for H->gammagamma primary claims, significance must come from RooFit analytic-function likelihood fits; unavailable RooFit capability is a blocked condition, not a fallback condition
 - for category-combined fits, construct a single combined likelihood over all configured categories with one shared POI (`mu`) and category-specific background parameters
 - when blinding is active for resonance windows, significance metadata must declare whether fits used full range or sideband-only ranges
 - when evaluating expected sensitivity during blinded analysis development, significance must be computed using Asimov pseudo-data rather than observed signal-region data
@@ -52,6 +53,7 @@ Asymptotic significance:
 - successful result satisfies `z_discovery = sqrt(q0)` within numerical tolerance
 - failed result includes actionable diagnostic information
 - for the required PyROOT backend in H->gammagamma workflows, exported NLL values and POI conventions are mapped consistently into the standard significance schema
+- for H->gammagamma workflows, primary significance artifacts declare `pyroot_roofit`; any non-ROOT significance artifact is explicitly marked cross-check-only and excluded from central claims
 - significance artifacts for category-combined fits list categories included and whether `mu` is shared across them
 - Asimov significance artifacts explicitly declare that inputs are pseudo-data and include generation provenance
 - observed and Asimov significance outputs are not conflated in reporting

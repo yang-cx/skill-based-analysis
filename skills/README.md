@@ -24,9 +24,14 @@ Core policy requirements:
 - Start execution from a referenced analysis JSON file; trigger prompts should be minimal and JSON-first.
 - Preserve a clear chain from event selection through statistical inference.
 - Treat signal and background modeling choices as explicit methodological choices.
+- Process ROOT ntuples with `uproot` as the default event-ingestion backend.
 - For the default Run-2 H->gammagamma workflow in this repository, central MC normalization must use `lumi_fb = 36.1`.
-- For H->gammagamma resonance analyses in this repository, use `pyroot_roofit` as the mandatory primary backend for mass fits and significance; non-ROOT backends may be used only as explicitly labeled cross-checks.
+- For H->gammagamma resonance analyses in this repository, analytic-function fits in `pyroot_roofit` are the mandatory primary path for mass fits and significance.
+- For H->gammagamma production workflows, PyROOT must be installed/importable before fit and significance stages begin.
+- If the mandatory H->gammagamma RooFit analytic path is unavailable, execution is blocked for primary results (fail-closed; no automatic primary-backend substitution).
+- Non-ROOT backends may be used only as explicitly labeled cross-checks and must not replace primary fit/significance artifacts.
 - Never replace existing workflow implementations when adding tools from other projects; keep new tools as additive, selectable options.
+- If a functioning analysis pipeline or required tooling is missing but can be built in-repository, construct it as part of the task rather than stopping at placeholder-only outputs.
 - Enforce blinding where required by the analysis strategy.
 - Require visual and statistical validation before declaring completion.
 - Require execution of post-run skill extraction (`meta/extract_new_skill_from_failure.md`) for every completed run; missing extraction blocks handoff-ready status.
@@ -75,6 +80,9 @@ Core policy requirements:
 - each declared fit has a fit-result artifact and significance artifact
 - each declared fit has an explicit backend declaration and backend-consistent diagnostics
 - each H->gammagamma fit declares `pyroot_roofit` as the primary backend
+- each H->gammagamma primary fit/significance claim is backed by RooFit analytic-function artifacts; non-ROOT artifacts, if present, are labeled cross-check-only
+- H->gammagamma runs with unresolved mandatory backend constraints are marked blocked/failed rather than completed with backend substitution
+- ROOT event-ingestion path is `uproot`-based unless an explicit, justified exception is recorded
 - region-level histograms, yields, and cut flows are mutually consistent within tolerance
 - signal and control regions used together in a fit are mutually exclusive at event level unless an explicit, justified overlap exception is declared
 - blinding metadata confirms signal-region data handling policy
@@ -86,6 +94,7 @@ Core policy requirements:
 - partition checks confirm category coverage/exclusivity and unique `(category, region)` keys
 - central yields/cut flows do not double count physics processes represented by both nominal and alternative MC samples
 - each central physics process with multiple candidate datasets has exactly one recorded nominal/reference selection, or the run is blocked pending clarification
+- if missing-but-buildable pipeline/tooling was detected, run artifacts include evidence of runtime construction and full-sample completion before handoff-ready status
 - `outputs/report/skill_extraction_summary.json` exists, is readable, and has `status` in `{none_found, candidates_created}`
 - `outputs/report/skill_refresh_plan.json` exists and is readable
 - `outputs/report/skill_refresh_log.jsonl` exists and is readable

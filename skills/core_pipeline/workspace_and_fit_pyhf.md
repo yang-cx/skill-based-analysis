@@ -16,7 +16,8 @@ Policy requirements:
 - control-region information may constrain signal-region background normalizations when correlations are defined
 - analytic mass-shape choices (when used) must feed the final statistical model consistently
 - fit diagnostics and parameter estimates must be preserved for interpretation
-- for H->gammagamma resonance workflows, the primary backend must be `pyroot_roofit`; `pyhf` may be used only as an explicitly labeled cross-check
+- for H->gammagamma resonance workflows, the primary backend must be `pyroot_roofit` with analytic-function modeling; `pyhf` may be used only as an explicitly labeled cross-check
+- for H->gammagamma primary results, if RooFit analytic fitting cannot run, the fit stage is blocked (do not substitute `pyhf` as primary)
 - for category-resolved resonance fits, support arbitrary category counts from configuration (do not hard-code a fixed number of categories)
 - for combined category fits, allow one shared signal-strength parameter (`mu`) correlated across categories while keeping background-shape parameters independent per category
 
@@ -34,6 +35,8 @@ Policy requirements:
 - model provenance metadata is attached to fit results
 - fit artifact schema remains consistent across backends for downstream significance/reporting stages
 - H->gammagamma fit artifacts declare `pyroot_roofit` as the primary backend
+- H->gammagamma fit stage is marked blocked/failed (not auto-substituted) when RooFit analytic-fit capability is unavailable
+- any non-ROOT H->gammagamma fit result includes explicit `cross_check_only` semantics and is excluded from primary claims
 
 ## Layer 3 — Example Implementation
 ### Mapping (Current Repository)
@@ -44,7 +47,7 @@ A fit configuration maps to:
 - nuisances: from systematics artifact
 - CR/SR correlations: from constraint-map artifact when available
 - analytic mass-model choice: from signal/background PDF artifacts when available
-- backend: primary `pyroot_roofit` for H->gammagamma resonance analytic-function fits; optional `pyhf` cross-check
+- backend: primary `pyroot_roofit` for H->gammagamma resonance analytic-function fits; optional `pyhf` cross-check only
 - category cardinality: derived from configured `regions_included` or explicit category list override (arbitrary `N`)
 
 ### CLI (Current Repository)

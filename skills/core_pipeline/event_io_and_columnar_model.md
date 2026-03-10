@@ -16,6 +16,9 @@ Policy requirements:
 - preserve variable-length object collections
 - keep event weights available for downstream weighted yields and fits
 - permit scalable reading for large samples without changing physics content
+- process ROOT ntuples with `uproot` as the default ingestion backend for event processing
+- keep event-ingestion logic independent of PyROOT where possible; reserve PyROOT for mandatory H->gammagamma statistical fitting stages
+- for H->gammagamma production runs, confirm PyROOT is installed/importable before starting fit/significance stages
 
 ## Layer 2 — Workflow Contract
 ### Required Artifacts
@@ -28,6 +31,8 @@ Policy requirements:
 - required analysis fields are present or explicitly flagged missing
 - object collections preserve per-event multiplicity
 - event-weight information is retained or explicitly derived
+- ROOT event ingestion is executed with `uproot` unless an explicit exception artifact justifies an alternative path
+- H->gammagamma runs record PyROOT availability for downstream statistical stages and fail-closed for primary claims if unavailable
 
 ## Layer 3 — Example Implementation
 ### Supported IO (Current Repository)

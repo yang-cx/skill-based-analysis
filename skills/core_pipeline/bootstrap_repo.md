@@ -16,7 +16,9 @@ Policy requirements:
 - Keep infrastructure generic enough to support multiple channels and observables.
 - Ensure the end-to-end pipeline can be rerun reproducibly.
 - Avoid embedding analysis-specific thresholds directly in infrastructure code.
+- If required pipeline modules or useful tooling are missing but buildable in-repository, construct/restore them as part of execution rather than stopping with placeholder-only artifacts.
 - Keep PyROOT dependencies isolated and available as a first-class requirement for H->gammagamma resonance-fit workflows.
+- Keep ROOT event-ingestion dependencies centered on `uproot` for event processing.
 
 ## Layer 2 — Workflow Contract
 ### Required Artifacts
@@ -24,12 +26,15 @@ Policy requirements:
 - stage entrypoint artifact enabling each stage to run independently
 - end-to-end orchestrator artifact that executes all stages consistently
 - minimal test artifact that verifies package integrity
+- runtime-recovery artifact documenting constructed/restored pipeline modules and tooling when initial runtime capability was missing
 
 ### Acceptance Checks
 - stage entrypoints are executable
 - orchestrator entrypoint is discoverable and runnable
 - at least one validation stage executes from the orchestrator
 - tests can be invoked and report pass/fail status
+- if the repository initially lacked a functioning pipeline/tooling, bootstrap produces a runnable replacement path for required stages before handoff
+- bootstrapped event-ingestion path supports ROOT processing through `uproot`
 - H->gammagamma production pipeline is runnable with required PyROOT/RooFit backend support; non-resonance paths may remain runnable without PyROOT
 
 ## Layer 3 — Example Implementation
