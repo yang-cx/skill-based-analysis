@@ -1,2 +1,0 @@
-"""Category/region partitioning utilities."""
-
